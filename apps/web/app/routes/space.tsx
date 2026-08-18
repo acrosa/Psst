@@ -145,10 +145,12 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 	// The board is client-only (pan/zoom/drag) — mount after hydration.
 	useEffect(() => setBoardReady(true), []);
 
-	// Ambient sync: gentle polling, paused while dragging or hidden.
+	// Ambient sync: gentle polling, paused while dragging. Background tabs keep
+	// polling (browser throttling caps the rate) so the board is current the
+	// moment you glance back at it.
 	useEffect(() => {
 		const id = setInterval(() => {
-			if (document.hidden || dragging.current || revalidator.state !== 'idle') return;
+			if (dragging.current || revalidator.state !== 'idle') return;
 			revalidator.revalidate();
 		}, pollMs);
 		return () => clearInterval(id);

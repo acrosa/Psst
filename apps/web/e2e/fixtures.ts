@@ -19,9 +19,9 @@ export const test = base.extend<{
 
 export { expect };
 export {
-	createSpaceViaOnboarding,
 	generateTestUser,
 	loginUser,
+	registerOntoCanvas,
 	registerUser,
 	type TestUser,
 } from './helpers';

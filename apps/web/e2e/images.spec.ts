@@ -1,4 +1,4 @@
-import { createSpaceViaOnboarding, expect, registerUser, test } from './fixtures';
+import { expect, registerOntoCanvas, test } from './fixtures';
 
 // 1×1 red PNG
 const TINY_PNG = Buffer.from(
@@ -8,8 +8,7 @@ const TINY_PNG = Buffer.from(
 
 test.describe('image items', () => {
 	test('a photo lands as a print, then gets a processed thumb', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Photo Corner');
+		await registerOntoCanvas(page);
 
 		await page
 			.locator('input[type="file"]')
@@ -35,8 +34,7 @@ test.describe('image items', () => {
 	});
 
 	test('non-image files are turned away kindly', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Strict Corner');
+		await registerOntoCanvas(page);
 
 		await page.locator('input[type="file"]').setInputFiles({
 			name: 'notes.txt',

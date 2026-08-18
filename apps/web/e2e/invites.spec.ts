@@ -1,30 +1,41 @@
 import { nowSeconds, withDb } from './db-helpers';
-import { createSpaceViaOnboarding, expect, generateTestUser, registerUser, test } from './fixtures';
+import { expect, generateTestUser, registerOntoCanvas, registerUser, test } from './fixtures';
 
-test.describe('spaces & invites', () => {
-	test('golden path: sign up → create a space → invite → partner joins the same canvas', async ({
+const BASE = `http://localhost:${Number(process.env.E2E_PORT) || 3100}`;
+
+test.describe('the core loop', () => {
+	test('sign up → canvas ready → drop things → invite → partner joins, sees it all, writes back', async ({
 		page,
 		browser,
 	}) => {
+		// A signs up — no onboarding, no naming step: a canvas is already theirs.
 		await registerUser(page);
-		const spaceUrl = await createSpaceViaOnboarding(page, 'Sunday Corner');
-		await expect(page.getByRole('banner').getByText('Sunday Corner')).toBeVisible();
+		const spaceUrl = page.url();
+		await expect(page.getByText(/drop something here/i)).toBeVisible();
+		await expect(page.getByRole('banner').getByText(/'s corner/)).toBeVisible();
 
-		// One button, one link
+		// A drops a note and a link before anyone else is even here.
+		await page.getByTestId('composer-input').fill('psst, welcome');
+		await page.getByRole('button', { name: /^drop$/i }).click();
+		await expect(page.getByText('psst, welcome')).toBeVisible();
+		await page.getByTestId('composer-input').fill(`${BASE}/e2e/og-fixture`);
+		await page.getByRole('button', { name: /^drop$/i }).click();
+
+		// One button, one link.
 		await page.getByRole('button', { name: /^invite$/i }).click();
 		const linkInput = page.getByTestId('invite-link');
 		await expect(linkInput).toHaveValue(/\/invite\//);
 		const inviteUrl = await linkInput.inputValue();
+		await page.keyboard.press('Escape');
 
-		// The partner opens the link in their own browser
+		// B opens the invite in their own browser.
 		const context = await browser.newContext();
 		try {
 			const partnerPage = await context.newPage();
 			await partnerPage.goto(inviteUrl);
 			await expect(partnerPage.getByText(/saved you a spot/i)).toBeVisible();
-			await expect(partnerPage.getByText('Sunday Corner', { exact: true })).toBeVisible();
 
-			// Tiny signup, straight from the invite
+			// Tiny signup straight from the invite…
 			await partnerPage.getByRole('link', { name: /sign up to join/i }).click();
 			const partner = generateTestUser('partner');
 			await partnerPage.getByLabel(/^name$/i).fill(partner.name);
@@ -32,34 +43,57 @@ test.describe('spaces & invites', () => {
 			await partnerPage.getByLabel(/password/i).fill(partner.password);
 			await partnerPage.getByRole('button', { name: /create account/i }).click();
 
-			// …lands back on the invite, one tap to join, straight onto the canvas
+			// …one tap to join, and B is standing on the same canvas.
 			await partnerPage.waitForURL('**/invite/**');
 			await partnerPage.getByRole('button', { name: /^join /i }).click();
 			await partnerPage.waitForURL(spaceUrl);
-			await expect(partnerPage.getByRole('banner').getByText('Sunday Corner')).toBeVisible();
 
-			// The owner sees both members in settings
+			// B sees everything A left — including the unfurled postcard.
+			await expect(partnerPage.getByText('psst, welcome')).toBeVisible();
+			await expect(partnerPage.getByText('A Cozy Test Page')).toBeVisible({ timeout: 15_000 });
+
+			// B flips A's note, reacts, and writes on the back.
+			const partnerNote = partnerPage.locator('.react-flow__node', { hasText: 'psst, welcome' });
+			await partnerNote.click();
+			await partnerNote.getByRole('button', { name: /🫶/ }).click();
+			await expect(partnerNote.getByRole('button', { name: /🫶/ })).toHaveAttribute(
+				'aria-pressed',
+				'true',
+			);
+			await partnerNote.getByPlaceholder(/write on the back/i).fill('love this');
+			await partnerNote.getByPlaceholder(/write on the back/i).press('Enter');
+			await expect(partnerNote.getByText('love this')).toBeVisible();
+
+			// A flips the same card and watches B's reply arrive on its own (polling).
+			const ownerNote = page.locator('.react-flow__node', { hasText: 'psst, welcome' });
+			await ownerNote.click();
+			await expect(ownerNote.getByText('love this')).toBeVisible({ timeout: 10_000 });
+			await expect(ownerNote.getByText(`${partner.name}:`)).toBeVisible();
+			await expect(ownerNote.getByRole('button', { name: /🫶/ })).toContainText('1');
+
+			// Both members show up in settings.
 			await page.goto(`${spaceUrl}/settings`);
 			await expect(page.getByText(partner.name)).toBeVisible();
 		} finally {
 			await context.close();
 		}
 	});
+});
 
-	test('spaces list shows cards and can create another space', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'First Corner');
+test.describe('spaces & invites', () => {
+	test('spaces list shows the starter space and can create another', async ({ page }) => {
+		await registerOntoCanvas(page);
 
 		await page.goto('/spaces');
-		await expect(page.getByRole('link', { name: /first corner/i })).toBeVisible();
+		await expect(page.getByRole('link', { name: /'s corner/i })).toBeVisible();
 
 		await page.getByRole('button', { name: /new space/i }).click();
-		await page.getByLabel(/space name/i).fill('Second Corner');
+		await page.getByLabel(/space name/i).fill('Berry Patch');
 		await page.getByRole('button', { name: /^create$/i }).click();
 		await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/);
 
 		await page.goto('/spaces');
-		await expect(page.getByRole('link', { name: /second corner/i })).toBeVisible();
+		await expect(page.getByRole('link', { name: /berry patch/i })).toBeVisible();
 	});
 
 	test('an invalid invite link gets a graceful page', async ({ page }) => {
@@ -69,8 +103,7 @@ test.describe('spaces & invites', () => {
 	});
 
 	test('an expired invite explains itself', async ({ page, browser }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Fleeting Corner');
+		await registerOntoCanvas(page);
 
 		await page.getByRole('button', { name: /^invite$/i }).click();
 		const linkInput = page.getByTestId('invite-link');

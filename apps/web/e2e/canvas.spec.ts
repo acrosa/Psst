@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { createSpaceViaOnboarding, expect, loginUser, registerUser, test } from './fixtures';
+import { expect, loginUser, registerOntoCanvas, registerUser, test } from './fixtures';
 
 const BASE = `http://localhost:${Number(process.env.E2E_PORT) || 3100}`;
 
@@ -16,8 +16,7 @@ function nodeFor(page: Page, text: string) {
 
 test.describe('the daily canvas', () => {
 	test('a note lands on the board as a paper slip', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Note Corner');
+		await registerOntoCanvas(page);
 
 		await expect(page.getByText(/drop something here/i)).toBeVisible();
 		await dropNote(page, 'hello little board');
@@ -25,8 +24,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('a link unfurls into a postcard', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Link Corner');
+		await registerOntoCanvas(page);
 
 		await page.getByTestId('composer-input').fill(`${BASE}/e2e/og-fixture`);
 		await page.getByRole('button', { name: /^drop$/i }).click();
@@ -37,8 +35,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('dragging an item keeps its place across a reload', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Drag Corner');
+		await registerOntoCanvas(page);
 		await dropNote(page, 'drag me somewhere nice');
 
 		const node = nodeFor(page, 'drag me somewhere nice');
@@ -69,8 +66,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('flip a card to write on the back and react', async ({ page }) => {
-		const user = await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Flip Corner');
+		const { user } = await registerOntoCanvas(page);
 		await dropNote(page, 'flip me over');
 
 		await nodeFor(page, 'flip me over').click();
@@ -93,8 +89,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('emoji stickers drop from the tray', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Sticker Corner');
+		await registerOntoCanvas(page);
 
 		await page.getByRole('button', { name: /sticker tray/i }).click();
 		await page.getByRole('button', { name: /drop 🐸 sticker/i }).click();
@@ -103,8 +98,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('authors can take their things back off the board', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Tidy Corner');
+		await registerOntoCanvas(page);
 		await dropNote(page, 'a fleeting thought');
 
 		await nodeFor(page, 'a fleeting thought').click();
@@ -116,8 +110,7 @@ test.describe('the daily canvas', () => {
 	});
 
 	test('a second window sees new items through ambient polling', async ({ page, browser }) => {
-		const owner = await registerUser(page);
-		const spaceUrl = await createSpaceViaOnboarding(page, 'Ambient Corner');
+		const { user: owner, spaceUrl } = await registerOntoCanvas(page);
 
 		const context = await browser.newContext();
 		try {

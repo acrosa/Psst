@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, max } from 'drizzle-orm';
+import { and, count, eq, isNull, max } from 'drizzle-orm';
 import { localDate } from '../dates';
 import { db, schema } from '../db/client.server';
 import { enqueue } from '../jobs.server';
@@ -28,25 +28,31 @@ function parseHttpUrl(raw: string): URL {
 	return url;
 }
 
-/** Gentle auto-placement: near the last item, with a little scatter. */
+/**
+ * Gentle auto-placement: items flow into a loose collage (4 to a row, with a
+ * little jitter and rotation) so nothing ever buries what came before.
+ * Members rearrange from there — that's the point.
+ */
 async function nextPlacement(canvasId: string) {
-	const [last] = await db
-		.select({ x: schema.items.x, y: schema.items.y, z: schema.items.z })
+	const [counted] = await db
+		.select({ value: count() })
 		.from(schema.items)
 		.where(and(eq(schema.items.canvasId, canvasId), isNull(schema.items.deletedAt)))
-		.orderBy(desc(schema.items.createdAt))
 		.limit(1);
+	const index = counted?.value ?? 0;
 
-	const scatter = () => Math.round((Math.random() - 0.5) * 120);
-	const base = last ? { x: last.x + 60, y: last.y + 40 } : { x: 0, y: 0 };
 	const [top] = await db
 		.select({ z: max(schema.items.z) })
 		.from(schema.items)
 		.where(eq(schema.items.canvasId, canvasId));
 
+	const column = index % 4;
+	const row = Math.floor(index / 4);
+	const jitter = () => Math.round((Math.random() - 0.5) * 60);
+
 	return {
-		x: base.x + scatter(),
-		y: base.y + scatter(),
+		x: column * 330 + jitter(),
+		y: row * 270 + jitter(),
 		z: (top?.z ?? 0) + 1,
 		rotation: Math.round((Math.random() * 6 - 3) * 10) / 10,
 	};

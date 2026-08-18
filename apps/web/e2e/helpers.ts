@@ -21,8 +21,8 @@ export function generateTestUser(prefix = 'test'): TestUser {
 }
 
 /**
- * Register a new user through the UI. A fresh user lands on /onboarding
- * (no spaces yet); users with spaces land on /spaces.
+ * Register a new user through the UI. Signup auto-creates their first space,
+ * so a fresh user lands directly on its canvas (/spaces/:id).
  */
 export async function registerUser(page: Page, user?: TestUser): Promise<TestUser> {
 	const testUser = user ?? generateTestUser();
@@ -33,11 +33,18 @@ export async function registerUser(page: Page, user?: TestUser): Promise<TestUse
 	await page.getByLabel(/password/i).fill(testUser.password);
 	await page.getByRole('button', { name: /create account/i }).click();
 
-	// A brand-new account has no spaces → /spaces bounces to /onboarding.
-	await page.waitForURL('**/onboarding', { timeout: 45_000 });
+	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
 	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
 
 	return testUser;
+}
+
+/** Register and return both the user and their auto-created canvas URL. */
+export async function registerOntoCanvas(
+	page: Page,
+): Promise<{ user: TestUser; spaceUrl: string }> {
+	const user = await registerUser(page);
+	return { user, spaceUrl: page.url() };
 }
 
 /**
@@ -66,16 +73,4 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 
 	await page.waitForURL(/\/(spaces|onboarding)$/);
 	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
-}
-
-/**
- * Create a space through the onboarding form (where fresh users land).
- * Returns the canvas URL (/spaces/:id).
- */
-export async function createSpaceViaOnboarding(page: Page, name: string): Promise<string> {
-	await page.waitForURL('**/onboarding');
-	await fillSettled(page, page.getByLabel(/space name/i), name);
-	await page.getByRole('button', { name: /open the canvas/i }).click();
-	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
-	return page.url();
 }

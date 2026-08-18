@@ -12,6 +12,9 @@ const E2E_URL = `http://localhost:${E2E_PORT}`;
 
 export default defineConfig({
 	testDir: './e2e',
+	// Cold dev-server compiles (vite transforming the board graph) can make the
+	// first registration slow; the default 30s budget is too tight for that.
+	timeout: 60_000,
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	// One local retry absorbs CPU-contention flakiness without masking real bugs.

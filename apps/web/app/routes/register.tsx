@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation, useSearchParams } from 'react-router';
 import { AuthCard } from '~/components/auth-card';
 import { GoogleButton } from '~/components/google-button';
+import { TimezoneInput } from '~/components/timezone-input';
 import { Button } from '~/components/ui/button';
 import { FormError } from '~/components/ui/field-error';
 import { Input } from '~/components/ui/input';
@@ -8,6 +9,7 @@ import { Label } from '~/components/ui/label';
 import { auth, getUser, isGoogleEnabled } from '~/lib/auth.server';
 import { track } from '~/lib/metrics.server';
 import { safeNext } from '~/lib/redirects';
+import { createSpace } from '~/lib/services/spaces.server';
 import type { Route } from './+types/register';
 
 export function meta() {
@@ -50,18 +52,36 @@ export async function action({ request }: Route.ActionArgs) {
 			return { error: message };
 		}
 
+		let userId: string | undefined;
 		try {
 			const body = await response.clone().json();
-			track({ event: 'signup', icon: '🌱', userId: body?.user?.id, description: email });
+			userId = body?.user?.id;
+			track({ event: 'signup', icon: '🌱', userId, description: email });
 		} catch {
 			// metrics are best-effort
 		}
 
 		const next = safeNext(new URL(request.url).searchParams.get('next'));
+		let location = next;
+
+		// Zero-friction first canvas: unless this signup is on its way somewhere
+		// (an invite), create a starter space and land straight on its board.
+		// It can be renamed any time in settings.
+		if (next === '/spaces' && userId) {
+			const firstName = name.split(/\s+/)[0] ?? '';
+			const space = await createSpace({
+				userId,
+				name: firstName ? `${firstName}'s corner` : 'our little corner',
+				emoji: '🌷',
+				timezone: String(formData.get('timezone') ?? 'UTC'),
+			});
+			location = `/spaces/${space.id}`;
+		}
+
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: next,
+				Location: location,
 				'Set-Cookie': response.headers.get('set-cookie') ?? '',
 			},
 		});
@@ -92,6 +112,7 @@ export default function Register({ loaderData, actionData }: Route.ComponentProp
 		>
 			<Form method="post" className="grid gap-4">
 				<FormError error={actionData?.error} />
+				<TimezoneInput />
 
 				<div className="grid gap-1.5">
 					<Label htmlFor="name">Name</Label>

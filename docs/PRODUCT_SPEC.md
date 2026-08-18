@@ -75,7 +75,8 @@ Playful and warm, with a postal soul. The app should feel like a small illustrat
 ### 4.1 Signup & onboarding
 
 - Single-screen signup (name, email, password). Google sign-in optional when configured.
-- First run creates your first space (pick a name + emoji) and drops you on its canvas with a friendly empty state.
+- **Signing up creates your first space automatically** — named after you ("Sam's corner" 🌷, timezone detected), renameable any time in settings — and drops you straight onto its canvas with a friendly empty state. Zero steps between signup and the board.
+- Arriving via an invite skips the starter space: you land on the canvas you were invited to.
 
 ### 4.2 Invites
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { nowSeconds, withDb } from './db-helpers';
-import { createSpaceViaOnboarding, expect, registerUser, test } from './fixtures';
+import { expect, registerOntoCanvas, test } from './fixtures';
 
 function yesterdayUTC(): string {
 	return new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
@@ -8,8 +8,7 @@ function yesterdayUTC(): string {
 
 test.describe('the timeline', () => {
 	test('archived days appear in the scrapbook and stay frozen', async ({ page }) => {
-		const owner = await registerUser(page);
-		const spaceUrl = await createSpaceViaOnboarding(page, 'Memory Corner');
+		const { user: owner, spaceUrl } = await registerOntoCanvas(page);
 		const spaceId = spaceUrl.split('/spaces/')[1];
 
 		// Something on today's board, through the UI
@@ -84,8 +83,7 @@ test.describe('the timeline', () => {
 	});
 
 	test('an empty scrapbook explains itself', async ({ page }) => {
-		await registerUser(page);
-		await createSpaceViaOnboarding(page, 'Fresh Corner');
+		await registerOntoCanvas(page);
 
 		await page.getByRole('link', { name: /timeline/i }).click();
 		await page.waitForURL('**/days');

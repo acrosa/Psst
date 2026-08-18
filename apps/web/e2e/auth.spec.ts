@@ -1,11 +1,13 @@
 import { expect, generateTestUser, loginUser, registerUser, test } from './fixtures';
 
 test.describe('auth', () => {
-	test('registers a new account and lands on onboarding', async ({ page }) => {
+	test('registers a new account and lands on a ready canvas', async ({ page }) => {
 		const user = await registerUser(page);
 
-		// A fresh user has no spaces yet → onboarding creates the first one
-		await expect(page).toHaveURL(/\/onboarding$/);
+		// Signup auto-creates the first space — straight onto its board.
+		await expect(page).toHaveURL(/\/spaces\/[0-9a-f-]{36}$/);
+		await expect(page.getByRole('banner').getByText(/'s corner/)).toBeVisible();
+		await expect(page.getByText(/drop something here/i)).toBeVisible();
 		await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
 
 		// Header shows who's signed in (desktop viewport)
