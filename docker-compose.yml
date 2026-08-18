@@ -1,0 +1,97 @@
+# Local development infrastructure.
+#
+#   docker compose up -d              # postgres + minio only (run the app on your host)
+#   docker compose --profile full up  # also run web + worker inside containers
+#
+# App on host:
+#   cp apps/web/.env.example apps/web/.env
+#   pnpm install && pnpm db:setup && pnpm db:migrate
+#   pnpm dev       # web on :3000
+#   pnpm worker    # background jobs (unfurl, images)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: psst
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # S3-compatible storage for image uploads. Optional: without S3_* env vars the
+  # app stores uploads on local disk (data/uploads).
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: psst
+      MINIO_ROOT_PASSWORD: psst-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 psst psst-secret &&
+      mc mb --ignore-existing local/psst-uploads &&
+      mc anonymous set download local/psst-uploads
+      "
+
+  web:
+    profiles: ['full']
+    image: node:22-slim
+    working_dir: /repo
+    command: sh -c "corepack enable && pnpm install && pnpm -C apps/web db:setup && pnpm -C apps/web db:migrate && pnpm dev"
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/psst
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: dev-secret-must-be-32-characters-long
+      NODE_ENV: development
+    volumes:
+      - .:/repo
+      - node_modules:/repo/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    profiles: ['full']
+    image: node:22-slim
+    working_dir: /repo
+    command: sh -c "corepack enable && pnpm install && pnpm worker"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/psst
+      NODE_ENV: development
+    volumes:
+      - .:/repo
+      - node_modules:/repo/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  minio_data:
+  node_modules:
