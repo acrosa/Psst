@@ -1,10 +1,11 @@
 import { expect, generateTestUser, loginUser, registerUser, test } from './fixtures';
 
 test.describe('auth', () => {
-	test('registers a new account and lands on spaces', async ({ page }) => {
+	test('registers a new account and lands on onboarding', async ({ page }) => {
 		const user = await registerUser(page);
 
-		await expect(page).toHaveURL(/\/spaces$/);
+		// A fresh user has no spaces yet → onboarding creates the first one
+		await expect(page).toHaveURL(/\/onboarding$/);
 		await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
 
 		// Header shows who's signed in (desktop viewport)
@@ -36,7 +37,7 @@ test.describe('auth', () => {
 		await expect(page.getByRole('link', { name: /start a canvas/i })).toBeVisible();
 
 		await loginUser(page, user);
-		await expect(page).toHaveURL(/\/spaces$/);
+		await expect(page).toHaveURL(/\/(spaces|onboarding)$/);
 	});
 
 	test('rejects a wrong password', async ({ page }) => {
@@ -59,10 +60,10 @@ test.describe('auth', () => {
 		await expect(page.getByRole('button', { name: /^sign in$/i })).toBeVisible();
 	});
 
-	test('landing page redirects signed-in users to spaces', async ({ page }) => {
+	test('landing page redirects signed-in users into the app', async ({ page }) => {
 		await registerUser(page);
 		await page.goto('/');
-		await page.waitForURL('**/spaces');
+		await page.waitForURL(/\/(spaces|onboarding)$/);
 	});
 
 	test('health endpoint responds', async ({ request }) => {

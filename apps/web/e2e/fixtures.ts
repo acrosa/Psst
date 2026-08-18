@@ -18,4 +18,10 @@ export const test = base.extend<{
 });
 
 export { expect };
-export { generateTestUser, loginUser, registerUser, type TestUser } from './helpers';
+export {
+	createSpaceViaOnboarding,
+	generateTestUser,
+	loginUser,
+	registerUser,
+	type TestUser,
+} from './helpers';

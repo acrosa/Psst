@@ -106,6 +106,7 @@ export default function Register({ loaderData, actionData }: Route.ComponentProp
 						type="email"
 						autoComplete="email"
 						placeholder="you@example.com"
+						defaultValue={searchParams.get('email') ?? ''}
 						required
 					/>
 				</div>

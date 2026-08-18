@@ -6,21 +6,26 @@ import {
 	Scripts,
 	ScrollRestoration,
 	isRouteErrorResponse,
+	useRouteLoaderData,
 } from 'react-router';
+import { env } from '~/lib/env.server';
 import type { Route } from './+types/root';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-	{ rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-	{
-		rel: 'stylesheet',
-		href: 'https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Caveat:wght@400..700&display=swap',
-	},
 ];
 
+export async function loader() {
+	// Web fonts are progressive enhancement — skipped in tests so an unreachable
+	// fonts CDN can never block the document load event.
+	return { withFonts: env.NODE_ENV !== 'test' };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+	const data = useRouteLoaderData<typeof loader>('root');
+	const withFonts = data?.withFonts ?? true;
+
 	return (
 		<html lang="en">
 			<head>
@@ -28,6 +33,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
+				{withFonts ? (
+					<>
+						<link rel="preconnect" href="https://fonts.googleapis.com" />
+						<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+						<link
+							rel="stylesheet"
+							href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Caveat:wght@400..700&display=swap"
+						/>
+					</>
+				) : null}
 			</head>
 			<body>
 				{children}
