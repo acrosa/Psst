@@ -9,13 +9,14 @@ import {
 } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
 import type { BoardItem } from '~/lib/services/canvases.server';
-import { type BoardNodeData, PostcardNode, SlipNode, StickerNode } from './nodes';
+import { type BoardNodeData, PostcardNode, PrintNode, SlipNode, StickerNode } from './nodes';
 import '@xyflow/react/dist/style.css';
 
 const nodeTypes: NodeTypes = {
 	link: PostcardNode,
 	note: SlipNode,
 	emoji: StickerNode,
+	image: PrintNode,
 };
 
 export type BoardProps = {

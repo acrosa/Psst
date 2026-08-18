@@ -19,10 +19,13 @@ function normalizeUrl(value: string): string {
 export function Composer() {
 	const fetcher = useFetcher<{ error?: string }>();
 	const stickerFetcher = useFetcher();
+	const photoFetcher = useFetcher<{ error?: string }>();
 	const inputRef = useRef<HTMLInputElement>(null);
+	const fileRef = useRef<HTMLInputElement>(null);
 	const [trayOpen, setTrayOpen] = useState(false);
 
 	const submitting = fetcher.state !== 'idle';
+	const uploading = photoFetcher.state !== 'idle';
 
 	useEffect(() => {
 		if (fetcher.state === 'idle' && fetcher.data && !fetcher.data.error && inputRef.current) {
@@ -47,9 +50,9 @@ export function Composer() {
 	return (
 		<div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex justify-center px-4">
 			<div className="pointer-events-auto w-full max-w-xl">
-				{fetcher.data?.error ? (
+				{fetcher.data?.error || photoFetcher.data?.error ? (
 					<p className="mb-2 rounded-lg bg-accent-soft px-3 py-1.5 text-center text-sm text-accent-deep shadow-card">
-						{fetcher.data.error}
+						{fetcher.data?.error ?? photoFetcher.data?.error}
 					</p>
 				) : null}
 
@@ -93,6 +96,34 @@ export function Composer() {
 					>
 						😊
 					</button>
+					<button
+						type="button"
+						aria-label="Add a photo"
+						disabled={uploading}
+						onClick={() => fileRef.current?.click()}
+						className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xl transition hover:bg-paper-deep disabled:opacity-50"
+					>
+						{uploading ? '⏳' : '🖼️'}
+					</button>
+					<input
+						ref={fileRef}
+						type="file"
+						accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+						aria-label="Photo file"
+						className="hidden"
+						onChange={(event) => {
+							const file = event.currentTarget.files?.[0];
+							event.currentTarget.value = '';
+							if (!file) return;
+							const formData = new FormData();
+							formData.set('intent', 'create-image');
+							formData.set('file', file);
+							photoFetcher.submit(formData, {
+								method: 'post',
+								encType: 'multipart/form-data',
+							});
+						}}
+					/>
 					<input
 						ref={inputRef}
 						data-testid="composer-input"

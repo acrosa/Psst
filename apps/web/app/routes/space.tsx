@@ -13,12 +13,14 @@ import { getBoardItems, getOrCreateTodayCanvas } from '~/lib/services/canvases.s
 import { createInvite } from '~/lib/services/invites.server';
 import {
 	addComment,
+	createImageItem,
 	createItem,
 	deleteItem,
 	moveItem,
 	toggleReaction,
 } from '~/lib/services/items.server';
 import { getSpace, getSpaceMembers, requireMember } from '~/lib/services/spaces.server';
+import { publicUrl } from '~/lib/storage.server';
 import type { Route } from './+types/space';
 
 export function meta({ data }: Route.MetaArgs) {
@@ -38,7 +40,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		getSpaceMembers(space.id),
 		getOrCreateTodayCanvas(space.id, space.timezone),
 	]);
-	const items = await getBoardItems(canvas.id, (key) => `/files/${key}`);
+	const items = await getBoardItems(canvas.id, publicUrl);
 
 	return {
 		user: { id: user.id, name: user.name ?? null },
@@ -80,6 +82,14 @@ export async function action({ request, params }: Route.ActionArgs) {
 					kind,
 					content: String(formData.get('content') ?? ''),
 				});
+				return { ok: true };
+			}
+			case 'create-image': {
+				const file = formData.get('file');
+				if (!(file instanceof File) || file.size === 0) {
+					return { error: 'Pick a photo first.' };
+				}
+				await createImageItem({ spaceId: params.spaceId, userId: user.id, file });
 				return { ok: true };
 			}
 			case 'move-item': {

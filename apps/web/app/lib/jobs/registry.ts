@@ -1,3 +1,4 @@
+import { imageProcess } from './handlers/image-process';
 import { unfurlFetch } from './handlers/unfurl';
 
 /**
@@ -9,10 +10,12 @@ import { unfurlFetch } from './handlers/unfurl';
 
 export type JobPayloads = {
 	'unfurl.fetch': { itemId: string };
+	'image.process': { itemId: string };
 };
 
 export type JobType = keyof JobPayloads;
 
 export const handlers: { [T in JobType]: (data: JobPayloads[T]) => Promise<void> } = {
 	'unfurl.fetch': unfurlFetch,
+	'image.process': imageProcess,
 };

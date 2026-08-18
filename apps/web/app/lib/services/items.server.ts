@@ -3,6 +3,7 @@ import { localDate } from '../dates';
 import { db, schema } from '../db/client.server';
 import { enqueue } from '../jobs.server';
 import { track } from '../metrics.server';
+import { putObject } from '../storage.server';
 import { getOrCreateTodayCanvas } from './canvases.server';
 import { getSpace, requireMember } from './spaces.server';
 
@@ -209,4 +210,51 @@ export async function toggleReaction(args: { itemId: string; userId: string; emo
 	await db.insert(schema.itemReactions).values({ itemId: item.id, userId: args.userId, emoji });
 	track({ event: 'reaction_added', icon: emoji, userId: args.userId });
 	return { reacted: true };
+}
+
+// ----------------------------------------------------------------------------
+// Image items
+// ----------------------------------------------------------------------------
+
+const IMAGE_EXT_BY_MIME: Record<string, string> = {
+	'image/png': 'png',
+	'image/jpeg': 'jpg',
+	'image/webp': 'webp',
+	'image/gif': 'gif',
+	'image/avif': 'avif',
+};
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+export async function createImageItem(args: { spaceId: string; userId: string; file: File }) {
+	await requireMember(args.spaceId, args.userId);
+	const space = await getSpace(args.spaceId);
+	if (!space) reject('Space not found.');
+
+	const ext = IMAGE_EXT_BY_MIME[args.file.type];
+	if (!ext) reject('Photos only — png, jpg, webp, gif or avif.');
+	if (args.file.size > MAX_IMAGE_BYTES) reject('Keep photos under 10MB.');
+	if (args.file.size === 0) reject('That file looks empty.');
+
+	const canvas = await getOrCreateTodayCanvas(args.spaceId, space.timezone);
+	const placement = await nextPlacement(canvas.id);
+
+	const [item] = await db
+		.insert(schema.items)
+		.values({
+			canvasId: canvas.id,
+			spaceId: args.spaceId,
+			authorId: args.userId,
+			type: 'image',
+			...placement,
+		})
+		.returning();
+
+	const key = `items/${item.id}/original.${ext}`;
+	await putObject(key, Buffer.from(await args.file.arrayBuffer()), args.file.type);
+	await db.insert(schema.itemAssets).values({ itemId: item.id, kind: 'original', storageKey: key });
+
+	await enqueue('image.process', { itemId: item.id });
+	track({ event: 'item_posted', icon: '🖼️', userId: args.userId, tags: { type: 'image' } });
+	return item;
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, seededTone } from '~/lib/design';
 import type { BoardItem } from '~/lib/services/canvases.server';
+import { BlurhashCanvas } from './blurhash-canvas';
 import { CardBack } from './card-back';
 import { FlipCard } from './flip-card';
 
@@ -172,5 +173,58 @@ function OpenLink({ url }: { url: string | null }) {
 		>
 			↗
 		</a>
+	);
+}
+
+/** Image → photo print with blurhash bloom. */
+export function PrintNode({ data }: BoardNodeProps) {
+	const { item, currentUserId, frozen } = data;
+	const [flipped, setFlipped] = useFlip();
+	const [loaded, setLoaded] = useState(false);
+	const size = ITEM_SIZES.image;
+
+	const photo =
+		item.assets.find((asset) => asset.kind === 'thumb') ??
+		item.assets.find((asset) => asset.kind === 'original');
+	const blurhash = photo?.blurhash ?? null;
+
+	return (
+		<FlipCard
+			width={size.w}
+			height={size.h}
+			rotation={item.rotation}
+			flipped={flipped}
+			onToggle={() => setFlipped((f) => !f)}
+			front={
+				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2 pb-7 shadow-card">
+					<div className="relative min-h-0 flex-1 overflow-hidden rounded-sm bg-paper-deep">
+						{blurhash ? (
+							<BlurhashCanvas
+								hash={blurhash}
+								className={cn(
+									'absolute inset-0 h-full w-full transition-opacity duration-700',
+									loaded ? 'opacity-0' : 'opacity-100',
+								)}
+							/>
+						) : null}
+						{photo ? (
+							<img
+								src={photo.url}
+								alt=""
+								draggable={false}
+								onLoad={() => setLoaded(true)}
+								className={cn(
+									'h-full w-full object-cover transition-opacity duration-700',
+									loaded ? 'opacity-100' : 'opacity-0',
+								)}
+							/>
+						) : (
+							<div className="grid h-full w-full place-items-center text-3xl">🖼️</div>
+						)}
+					</div>
+				</div>
+			}
+			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
+		/>
 	);
 }
