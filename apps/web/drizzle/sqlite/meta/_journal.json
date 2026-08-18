@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1787085915931,
+      "tag": "0000_conscious_swarm",
+      "breakpoints": true
+    }
+  ]
+}
