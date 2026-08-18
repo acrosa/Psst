@@ -1,11 +1,23 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useFetcher, useRevalidator } from 'react-router';
 import { AppHeader } from '~/components/app-header';
+import { Board } from '~/components/canvas/board';
+import { Composer } from '~/components/canvas/composer';
 import { InviteDialog } from '~/components/invite-dialog';
 import { AvatarStack } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
 import { requireUser } from '~/lib/auth.server';
+import { formatDay } from '~/lib/dates';
+import { env } from '~/lib/env.server';
+import { getBoardItems, getOrCreateTodayCanvas } from '~/lib/services/canvases.server';
 import { createInvite } from '~/lib/services/invites.server';
+import {
+	addComment,
+	createItem,
+	deleteItem,
+	moveItem,
+	toggleReaction,
+} from '~/lib/services/items.server';
 import { getSpace, getSpaceMembers, requireMember } from '~/lib/services/spaces.server';
 import type { Route } from './+types/space';
 
@@ -21,11 +33,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	if (!space) {
 		throw new Response('Not found', { status: 404 });
 	}
-	const members = await getSpaceMembers(space.id);
+
+	const [members, canvas] = await Promise.all([
+		getSpaceMembers(space.id),
+		getOrCreateTodayCanvas(space.id, space.timezone),
+	]);
+	const items = await getBoardItems(canvas.id, (key) => `/files/${key}`);
+
 	return {
 		user: { id: user.id, name: user.name ?? null },
 		space: { id: space.id, name: space.name, emoji: space.emoji, timezone: space.timezone },
 		members,
+		board: { date: canvas.date, items },
+		pollMs: env.NODE_ENV === 'test' ? 2000 : 10_000,
 	};
 }
 
@@ -35,39 +55,118 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const formData = await request.formData();
 	const intent = formData.get('intent');
 
-	if (intent === 'create-invite') {
-		const { url } = await createInvite({ spaceId: params.spaceId, userId: user.id });
-		return { inviteUrl: url };
-	}
-
-	if (intent === 'email-invite') {
-		const email = String(formData.get('email') ?? '').trim();
-		if (!email || !email.includes('@')) {
-			return { error: 'That email looks off — try again?' };
+	try {
+		switch (intent) {
+			case 'create-invite': {
+				const { url } = await createInvite({ spaceId: params.spaceId, userId: user.id });
+				return { inviteUrl: url };
+			}
+			case 'email-invite': {
+				const email = String(formData.get('email') ?? '').trim();
+				if (!email || !email.includes('@')) {
+					return { error: 'That email looks off — try again?' };
+				}
+				await createInvite({ spaceId: params.spaceId, userId: user.id, email });
+				return { emailedTo: email };
+			}
+			case 'create-item': {
+				const kind = String(formData.get('kind') ?? 'note');
+				if (kind !== 'link' && kind !== 'note' && kind !== 'emoji') {
+					return { error: 'Unknown item kind.' };
+				}
+				await createItem({
+					spaceId: params.spaceId,
+					userId: user.id,
+					kind,
+					content: String(formData.get('content') ?? ''),
+				});
+				return { ok: true };
+			}
+			case 'move-item': {
+				await moveItem({
+					itemId: String(formData.get('itemId') ?? ''),
+					userId: user.id,
+					x: Number.parseFloat(String(formData.get('x'))),
+					y: Number.parseFloat(String(formData.get('y'))),
+				});
+				return { ok: true };
+			}
+			case 'add-comment': {
+				await addComment({
+					itemId: String(formData.get('itemId') ?? ''),
+					userId: user.id,
+					text: String(formData.get('text') ?? ''),
+				});
+				return { ok: true };
+			}
+			case 'toggle-reaction': {
+				await toggleReaction({
+					itemId: String(formData.get('itemId') ?? ''),
+					userId: user.id,
+					emoji: String(formData.get('emoji') ?? ''),
+				});
+				return { ok: true };
+			}
+			case 'delete-item': {
+				await deleteItem({ itemId: String(formData.get('itemId') ?? ''), userId: user.id });
+				return { ok: true };
+			}
+			default:
+				return null;
 		}
-		await createInvite({ spaceId: params.spaceId, userId: user.id, email });
-		return { emailedTo: email };
+	} catch (error) {
+		// Services throw 4xx Responses with friendly text — surface them to the
+		// fetcher that asked instead of the error boundary.
+		if (error instanceof Response && error.status < 500) {
+			return { error: await error.text() };
+		}
+		throw error;
 	}
-
-	return null;
 }
 
 export default function Space({ loaderData }: Route.ComponentProps) {
-	const { space, members, user } = loaderData;
+	const { space, members, user, board, pollMs } = loaderData;
 	const [inviting, setInviting] = useState(false);
+	const [boardReady, setBoardReady] = useState(false);
+	const dragging = useRef(false);
+	const revalidator = useRevalidator();
+	const moveFetcher = useFetcher();
+
+	// The board is client-only (pan/zoom/drag) — mount after hydration.
+	useEffect(() => setBoardReady(true), []);
+
+	// Ambient sync: gentle polling, paused while dragging or hidden.
+	useEffect(() => {
+		const id = setInterval(() => {
+			if (document.hidden || dragging.current || revalidator.state !== 'idle') return;
+			revalidator.revalidate();
+		}, pollMs);
+		return () => clearInterval(id);
+	}, [revalidator, pollMs]);
 
 	return (
-		<div className="flex min-h-svh flex-col">
+		<div className="flex h-svh flex-col">
 			<AppHeader userName={user.name}>
 				<div className="flex min-w-0 items-center gap-3">
 					<span className="text-2xl" aria-hidden>
 						{space.emoji}
 					</span>
-					<span className="truncate font-medium">{space.name}</span>
+					<div className="min-w-0">
+						<div className="truncate font-medium leading-tight">{space.name}</div>
+						<div className="text-xs text-ink-faint leading-tight">
+							Today · {formatDay(board.date)}
+						</div>
+					</div>
 					<AvatarStack people={members} className="hidden sm:flex" />
 					<Button size="sm" onClick={() => setInviting(true)}>
 						Invite
 					</Button>
+					<Link
+						to={`/spaces/${space.id}/days`}
+						className="rounded-lg px-2 py-1.5 text-sm text-ink-soft transition hover:bg-paper-deep hover:text-ink"
+					>
+						Timeline
+					</Link>
 					<Link
 						to={`/spaces/${space.id}/settings`}
 						aria-label="Space settings"
@@ -78,8 +177,28 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 				</div>
 			</AppHeader>
 
-			<main className="flex flex-1 items-center justify-center p-6">
-				<p className="text-ink-faint">🖼️ The canvas lands here next.</p>
+			<main className="relative min-h-0 flex-1">
+				{boardReady ? (
+					<Board
+						items={board.items}
+						currentUserId={user.id}
+						frozen={false}
+						onDraggingChange={(value) => {
+							dragging.current = value;
+						}}
+						onMove={(itemId, x, y) =>
+							moveFetcher.submit(
+								{ intent: 'move-item', itemId, x: String(x), y: String(y) },
+								{ method: 'post' },
+							)
+						}
+					/>
+				) : (
+					<div className="grid h-full place-items-center text-ink-faint">
+						<span className="animate-shimmer font-hand text-2xl">setting the table…</span>
+					</div>
+				)}
+				<Composer />
 			</main>
 
 			<InviteDialog open={inviting} onClose={() => setInviting(false)} />

@@ -28,6 +28,7 @@ export function Dialog({
 	}, [open]);
 
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplementary — native <dialog> already closes on Escape
 		<dialog
 			ref={ref}
 			onClose={onClose}

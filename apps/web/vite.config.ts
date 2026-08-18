@@ -11,6 +11,11 @@ export default defineConfig({
 		// makes a collision fail fast instead of silently drifting to another port.
 		port: Number(process.env.PORT) || 3000,
 		strictPort: Boolean(process.env.PORT),
+		// Pre-transform the board's dependency graph (@xyflow/react is the heavy
+		// one) so first paint of a canvas isn't a cold-compile stall.
+		warmup: {
+			clientFiles: ['./app/components/canvas/board.tsx', './app/root.tsx'],
+		},
 	},
 	ssr: {
 		// Native modules that must not be bundled

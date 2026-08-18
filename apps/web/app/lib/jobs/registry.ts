@@ -1,3 +1,5 @@
+import { unfurlFetch } from './handlers/unfurl';
+
 /**
  * Job registry: every background job is a plain async function keyed by type.
  * The same handlers run through pg-boss (JOBS_MODE=queue + `pnpm worker`) or
@@ -5,9 +7,12 @@
  * idempotent. Register new jobs here and they are picked up by both paths.
  */
 
-// biome-ignore lint/complexity/noBannedTypes: filled in as job types are added
-export type JobPayloads = {};
+export type JobPayloads = {
+	'unfurl.fetch': { itemId: string };
+};
 
 export type JobType = keyof JobPayloads;
 
-export const handlers: { [T in JobType]: (data: JobPayloads[T]) => Promise<void> } = {};
+export const handlers: { [T in JobType]: (data: JobPayloads[T]) => Promise<void> } = {
+	'unfurl.fetch': unfurlFetch,
+};

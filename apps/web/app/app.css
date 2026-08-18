@@ -72,3 +72,26 @@ body {
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 }
+
+/* The board: quiet chrome, paper shows through */
+.psst-board .react-flow {
+	background: transparent;
+}
+
+.psst-board .react-flow__node {
+	cursor: grab;
+}
+
+.psst-board .react-flow__node.dragging {
+	cursor: grabbing;
+}
+
+.psst-board .react-flow__attribution {
+	background: transparent;
+	color: var(--color-ink-faint);
+	font-size: 10px;
+}
+
+dialog::backdrop {
+	background: rgb(64 56 47 / 0.35);
+}

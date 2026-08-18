@@ -28,15 +28,33 @@ export async function registerUser(page: Page, user?: TestUser): Promise<TestUse
 	const testUser = user ?? generateTestUser();
 
 	await page.goto('/register');
-	await page.getByLabel(/^name$/i).fill(testUser.name);
+	await fillSettled(page, page.getByLabel(/^name$/i), testUser.name);
 	await page.getByLabel(/email/i).fill(testUser.email);
 	await page.getByLabel(/password/i).fill(testUser.password);
 	await page.getByRole('button', { name: /create account/i }).click();
 
-	await page.waitForURL(/\/(spaces|onboarding)$/);
+	// A brand-new account has no spaces → /spaces bounces to /onboarding.
+	await page.waitForURL('**/onboarding', { timeout: 45_000 });
 	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
 
 	return testUser;
+}
+
+/**
+ * Fill that survives a hydration re-render swapping the input out from under
+ * us (the classic first-interaction race on a cold dev server).
+ */
+async function fillSettled(
+	page: Page,
+	locator: ReturnType<Page['getByLabel']>,
+	value: string,
+): Promise<void> {
+	for (let attempt = 0; attempt < 3; attempt += 1) {
+		await locator.fill(value);
+		await page.waitForTimeout(150);
+		if ((await locator.inputValue()) === value) return;
+	}
+	await expect(locator).toHaveValue(value);
 }
 
 /** Sign in an existing user through the UI. */
@@ -56,8 +74,8 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
  */
 export async function createSpaceViaOnboarding(page: Page, name: string): Promise<string> {
 	await page.waitForURL('**/onboarding');
-	await page.getByLabel(/space name/i).fill(name);
+	await fillSettled(page, page.getByLabel(/space name/i), name);
 	await page.getByRole('button', { name: /open the canvas/i }).click();
-	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/);
+	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
 	return page.url();
 }
