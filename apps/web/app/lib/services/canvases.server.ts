@@ -197,3 +197,80 @@ export async function listCanvases(
 	const filtered = before ? rows.filter((c) => c.date < before) : rows;
 	return filtered.slice(0, limit);
 }
+
+// ----------------------------------------------------------------------------
+// Timeline previews — a peek at each archived day for the scrapbook list.
+// ----------------------------------------------------------------------------
+
+export type DayPeek =
+	| { type: 'note'; text: string }
+	| { type: 'emoji'; emoji: string }
+	| { type: 'link' | 'image'; imageUrl: string | null };
+
+export type TimelineDay = {
+	date: string;
+	count: number;
+	peeks: DayPeek[];
+};
+
+export async function getTimelinePreviews(
+	canvases: Array<{ id: string; date: string }>,
+	assetUrl: (key: string) => string,
+): Promise<TimelineDay[]> {
+	if (canvases.length === 0) return [];
+
+	const canvasIds = canvases.map((c) => c.id);
+	const rows = await db
+		.select()
+		.from(schema.items)
+		.where(and(inArray(schema.items.canvasId, canvasIds), isNull(schema.items.deletedAt)))
+		.orderBy(desc(schema.items.z));
+
+	const itemIds = rows.map((r) => r.id);
+	const [unfurls, assets] =
+		itemIds.length > 0
+			? await Promise.all([
+					db
+						.select({ itemId: schema.itemUnfurls.itemId, imageUrl: schema.itemUnfurls.imageUrl })
+						.from(schema.itemUnfurls)
+						.where(inArray(schema.itemUnfurls.itemId, itemIds)),
+					db
+						.select({
+							itemId: schema.itemAssets.itemId,
+							kind: schema.itemAssets.kind,
+							storageKey: schema.itemAssets.storageKey,
+						})
+						.from(schema.itemAssets)
+						.where(inArray(schema.itemAssets.itemId, itemIds)),
+				])
+			: [[], []];
+
+	const unfurlImage = new Map(unfurls.map((u) => [u.itemId, u.imageUrl]));
+	const thumbByItem = new Map<string, string>();
+	for (const asset of assets) {
+		if (asset.kind === 'thumb' || !thumbByItem.has(asset.itemId)) {
+			thumbByItem.set(asset.itemId, asset.storageKey);
+		}
+	}
+
+	return canvases.map((canvas) => {
+		const dayItems = rows.filter((item) => item.canvasId === canvas.id);
+		return {
+			date: canvas.date,
+			count: dayItems.length,
+			peeks: dayItems.slice(0, 6).map((item): DayPeek => {
+				if (item.type === 'note') {
+					return { type: 'note', text: (item.text ?? '').slice(0, 60) };
+				}
+				if (item.type === 'emoji') {
+					return { type: 'emoji', emoji: item.text ?? '✨' };
+				}
+				if (item.type === 'image') {
+					const key = thumbByItem.get(item.id);
+					return { type: 'image', imageUrl: key ? assetUrl(key) : null };
+				}
+				return { type: 'link', imageUrl: unfurlImage.get(item.id) ?? null };
+			}),
+		};
+	});
+}

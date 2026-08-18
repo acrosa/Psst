@@ -11,6 +11,8 @@ export default [
 	route('onboarding', 'routes/onboarding.tsx'),
 	route('spaces', 'routes/spaces.tsx'),
 	route('spaces/:spaceId', 'routes/space.tsx'),
+	route('spaces/:spaceId/days', 'routes/space.days.tsx'),
+	route('spaces/:spaceId/days/:date', 'routes/space.day.tsx'),
 	route('spaces/:spaceId/settings', 'routes/space.settings.tsx'),
 	route('invite/:token', 'routes/invite.tsx'),
 

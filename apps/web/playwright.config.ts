@@ -22,6 +22,9 @@ export default defineConfig({
 	use: {
 		baseURL: E2E_URL,
 		trace: 'on-first-retry',
+		// Deterministic day-boundary math: browser timezone (which seeds each
+		// space's timezone) matches the UTC dates the specs fabricate.
+		timezoneId: 'UTC',
 		// Sandboxed CI images sometimes pre-install a Chromium whose build number
 		// doesn't match this Playwright version — point at it explicitly there.
 		...(process.env.PLAYWRIGHT_CHROMIUM_PATH
