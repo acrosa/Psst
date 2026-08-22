@@ -18,3 +18,18 @@ export function withDb<T>(fn: (db: Database.Database) => T): T {
 export function nowSeconds(): number {
 	return Math.floor(Date.now() / 1000);
 }
+
+export function inviteTokenFromUrl(inviteUrl: string): string {
+	const token = inviteUrl.split('/invite/')[1]?.split(/[?#]/)[0];
+	if (!token) throw new Error(`No invite token in ${inviteUrl}`);
+	return token;
+}
+
+export function inviteAcceptedAt(token: string): number | null {
+	return withDb((db) => {
+		const row = db.prepare('SELECT accepted_at FROM invites WHERE token = ?').get(token) as
+			| { accepted_at: number | null }
+			| undefined;
+		return row?.accepted_at ?? null;
+	});
+}

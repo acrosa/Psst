@@ -19,9 +19,12 @@ export const test = base.extend<{
 
 export { expect };
 export {
+	copyInviteLink,
 	generateTestUser,
 	loginUser,
 	registerOntoCanvas,
 	registerUser,
+	submitLoginForm,
+	submitRegisterForm,
 	type TestUser,
 } from './helpers';

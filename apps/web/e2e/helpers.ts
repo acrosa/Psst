@@ -28,10 +28,7 @@ export async function registerUser(page: Page, user?: TestUser): Promise<TestUse
 	const testUser = user ?? generateTestUser();
 
 	await page.goto('/register');
-	await fillSettled(page, page.getByLabel(/^name$/i), testUser.name);
-	await page.getByLabel(/email/i).fill(testUser.email);
-	await page.getByLabel(/password/i).fill(testUser.password);
-	await page.getByRole('button', { name: /create account/i }).click();
+	await submitRegisterForm(page, testUser);
 
 	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
 	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
@@ -67,10 +64,32 @@ async function fillSettled(
 /** Sign in an existing user through the UI. */
 export async function loginUser(page: Page, user: TestUser): Promise<void> {
 	await page.goto('/login');
+	await submitLoginForm(page, user);
+	await page.waitForURL(/\/(spaces|onboarding)$/);
+	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+}
+
+/** Fill and submit the register form without waiting for a destination. */
+export async function submitRegisterForm(page: Page, user: TestUser): Promise<void> {
+	await fillSettled(page, page.getByLabel(/^name$/i), user.name);
+	await page.getByLabel(/email/i).fill(user.email);
+	await page.getByLabel(/password/i).fill(user.password);
+	await page.getByRole('button', { name: /create account/i }).click();
+}
+
+/** Fill and submit the login form without waiting for a destination. */
+export async function submitLoginForm(page: Page, user: TestUser): Promise<void> {
 	await page.getByLabel(/email/i).fill(user.email);
 	await page.getByLabel(/password/i).fill(user.password);
 	await page.getByRole('button', { name: /^sign in$/i }).click();
+}
 
-	await page.waitForURL(/\/(spaces|onboarding)$/);
-	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+/** Open the invite dialog on today's canvas and return the copyable link. */
+export async function copyInviteLink(page: Page): Promise<string> {
+	await page.getByRole('button', { name: /^invite$/i }).click();
+	const linkInput = page.getByTestId('invite-link');
+	await expect(linkInput).toHaveValue(/\/invite\//);
+	const inviteUrl = await linkInput.inputValue();
+	await page.keyboard.press('Escape');
+	return inviteUrl;
 }

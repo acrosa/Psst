@@ -9,6 +9,7 @@ import { Label } from '~/components/ui/label';
 import { auth, getUser, isGoogleEnabled } from '~/lib/auth.server';
 import { track } from '~/lib/metrics.server';
 import { safeNext } from '~/lib/redirects';
+import { completeInviteIfPresent } from '~/lib/services/invites.server';
 import { createSpace } from '~/lib/services/spaces.server';
 import type { Route } from './+types/register';
 
@@ -64,18 +65,21 @@ export async function action({ request }: Route.ActionArgs) {
 		const next = safeNext(new URL(request.url).searchParams.get('next'));
 		let location = next;
 
-		// Zero-friction first canvas: unless this signup is on its way somewhere
-		// (an invite), create a starter space and land straight on its board.
-		// It can be renamed any time in settings.
-		if (next === '/spaces' && userId) {
-			const firstName = name.split(/\s+/)[0] ?? '';
-			const space = await createSpace({
-				userId,
-				name: firstName ? `${firstName}'s corner` : 'our little corner',
-				emoji: '🌷',
-				timezone: String(formData.get('timezone') ?? 'UTC'),
-			});
-			location = `/spaces/${space.id}`;
+		if (userId) {
+			location = await completeInviteIfPresent(next, userId);
+			// Zero-friction first canvas: unless this signup is on its way
+			// somewhere (an invite — success or sad), create a starter space
+			// and land straight on its board. It can be renamed in settings.
+			if (location === '/spaces') {
+				const firstName = name.split(/\s+/)[0] ?? '';
+				const space = await createSpace({
+					userId,
+					name: firstName ? `${firstName}'s corner` : 'our little corner',
+					emoji: '🌷',
+					timezone: String(formData.get('timezone') ?? 'UTC'),
+				});
+				location = `/spaces/${space.id}`;
+			}
 		}
 
 		return new Response(null, {

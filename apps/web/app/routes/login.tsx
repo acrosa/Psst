@@ -7,6 +7,7 @@ import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { auth, getUser, isGoogleEnabled } from '~/lib/auth.server';
 import { safeNext } from '~/lib/redirects';
+import { completeInviteIfPresent } from '~/lib/services/invites.server';
 import type { Route } from './+types/login';
 
 export function meta() {
@@ -48,11 +49,20 @@ export async function action({ request }: Route.ActionArgs) {
 			return { error: message };
 		}
 
+		let userId: string | undefined;
+		try {
+			const body = await response.clone().json();
+			userId = body?.user?.id;
+		} catch {
+			// invite accept needs the id; without it they land on `next` and can Join
+		}
+
 		const next = safeNext(new URL(request.url).searchParams.get('next'));
+		const location = userId ? await completeInviteIfPresent(next, userId) : next;
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: next,
+				Location: location,
 				'Set-Cookie': response.headers.get('set-cookie') ?? '',
 			},
 		});
