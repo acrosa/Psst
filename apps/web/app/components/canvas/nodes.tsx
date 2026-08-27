@@ -156,10 +156,8 @@ export function StickerNode({ data }: BoardNodeProps) {
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => {}}
 			front={
-				<div className="group/sticker grid h-full w-full place-items-center">
-					<span className="grid h-full w-full place-items-center rounded-[38%] bg-card text-6xl shadow-card ring-1 ring-line/60 [filter:drop-shadow(0_5px_8px_rgb(64_56_47/0.14))]">
-						{item.text}
-					</span>
+				<div className="group/sticker grid h-full w-full place-items-center text-7xl [filter:drop-shadow(0_6px_10px_rgb(64_56_47/0.18))]">
+					<span>{item.text}</span>
 					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
 				</div>
 			}
