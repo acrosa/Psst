@@ -1,6 +1,19 @@
 # psst
 
-A private shared **daily canvas** for tiny groups (2–8): members drop links, notes, photos, and emoji stickers onto today's board, drag them around, flip them to read small caption threads, and react. Days archive into a timeline. Explicitly **not a chat**. Full product spec: `docs/PRODUCT_SPEC.md`.
+A private shared **daily canvas** for tiny groups (2–8): members drop links, notes, photos, and emoji stickers onto today's board, drag them around, flip them to read small caption threads, and react. Days archive into a timeline. Explicitly **not a chat**. Full product spec: `docs/PRODUCT_SPEC.md`. Design system: `docs/DESIGN.md`.
+
+## Design spirit
+
+> "You have to make every single detail perfect, and you have to limit the number of details." — Jack Dorsey
+
+This is the bar for every change to psst. Two halves, both binding:
+
+- **Every detail perfect.** The few things on screen get full attention: copy, spacing, motion, empty states, error states. A detail not worth perfecting is a detail to cut.
+- **Limit the number of details.** Simple and seamless — no complex UI, no settings where an automatic behavior works, no features orbiting the core. Everything should flow.
+
+What's important (perfect these, cut around them): **sharing**, **connection**, and **effortless onboarding** — a person should get from a link to dropping something on a friend's canvas with nearly zero friction. When a change is debatable, ask: does it serve one of these three, and is it the simplest version of itself?
+
+`docs/DESIGN.md` translates this spirit into binding definitions — color, type, layout modes, materials, motion, voice — distilled from the reference images in `docs/design/inspiration/`. Consult it before any UI work.
 
 ## Structure
 
