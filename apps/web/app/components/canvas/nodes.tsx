@@ -156,8 +156,10 @@ export function StickerNode({ data }: BoardNodeProps) {
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => {}}
 			front={
-				<div className="group/sticker grid h-full w-full place-items-center text-7xl [filter:drop-shadow(0_6px_10px_rgb(64_56_47/0.18))]">
-					<span>{item.text}</span>
+				<div className="group/sticker grid h-full w-full place-items-center">
+					<span className="grid h-full w-full place-items-center rounded-[38%] bg-card text-6xl shadow-card ring-1 ring-line/60 [filter:drop-shadow(0_5px_8px_rgb(64_56_47/0.14))]">
+						{item.text}
+					</span>
 					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
 				</div>
 			}
@@ -312,13 +314,32 @@ function CardBadges({ item, onFlip }: { item: BoardItem; onFlip: () => void }) {
 	);
 }
 
+/** A real postage stamp: scalloped perforations, inked in the accent. */
 function PostageStamp() {
+	const size = 28;
+	const step = 7;
+	const holes: Array<[number, number]> = [];
+	for (let at = 0; at <= size; at += step) {
+		holes.push([at, 0], [at, size], [0, at], [size, at]);
+	}
 	return (
-		<div
-			className="absolute top-1.5 right-1.5 grid h-7 w-7 rotate-6 place-items-center rounded-sm border border-white/70 border-dashed bg-accent/85 text-xs text-white"
-			aria-hidden
-		>
-			✷
+		<div className="absolute top-1.5 right-1.5 rotate-6" aria-hidden>
+			<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+				<mask id="stamp-perforations">
+					<rect width={size} height={size} fill="white" />
+					{holes.map(([x, y]) => (
+						<circle key={`${x}-${y}`} cx={x} cy={y} r={2.2} fill="black" />
+					))}
+				</mask>
+				<rect
+					width={size}
+					height={size}
+					fill="var(--color-accent)"
+					opacity={0.9}
+					mask="url(#stamp-perforations)"
+				/>
+			</svg>
+			<span className="absolute inset-0 grid place-items-center text-[10px] text-white">✷</span>
 		</div>
 	);
 }

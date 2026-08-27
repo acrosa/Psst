@@ -136,6 +136,13 @@
 	}
 }
 
+/* Tick rail: neighbors of the hovered tick lean in too. */
+.tick:hover + .tick,
+.tick:has(+ .tick:hover) {
+	width: 1.5rem;
+	background-color: var(--color-ink-soft);
+}
+
 @keyframes pop-in {
 	from {
 		opacity: 0;

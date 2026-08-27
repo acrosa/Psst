@@ -21,8 +21,8 @@ export default function Home() {
 	return (
 		<main className="flex min-h-svh flex-col items-center justify-center gap-8 p-6 text-center">
 			<div className="animate-pop-in flex flex-col items-center gap-5">
-				<div className="text-6xl">🤫</div>
-				<h1 className="font-serif text-3xl sm:text-4xl">psst… look at this</h1>
+				<div className="font-serif text-6xl italic leading-none">psst</div>
+				<h1 className="font-serif text-3xl sm:text-4xl">a canvas for the people you whisper to</h1>
 				<p className="max-w-md text-lg text-ink-soft">
 					A little shared canvas for you and someone close. Drop links, notes, photos and stickers
 					on today&apos;s board — tomorrow it becomes a page in your scrapbook.
@@ -45,11 +45,20 @@ export default function Home() {
 				</Link>
 			</div>
 
-			<div className="flex gap-4 text-3xl" aria-hidden>
-				<span className="-rotate-6 inline-block">📮</span>
-				<span className="rotate-3 inline-block">🖼️</span>
-				<span className="-rotate-3 inline-block">🎶</span>
-				<span className="rotate-6 inline-block">💌</span>
+			<div className="flex gap-4" aria-hidden>
+				{[
+					['💌', '-rotate-6'],
+					['🖼️', 'rotate-3'],
+					['🎶', '-rotate-2'],
+					['🐸', 'rotate-6'],
+				].map(([emoji, tilt]) => (
+					<span
+						key={emoji}
+						className={`grid h-14 w-14 place-items-center rounded-[38%] bg-card text-2xl shadow-card ring-1 ring-line/60 ${tilt}`}
+					>
+						{emoji}
+					</span>
+				))}
 			</div>
 		</main>
 	);

@@ -60,7 +60,7 @@ export default function SpaceDays({ loaderData }: Route.ComponentProps) {
 	const { space, days, user, nextBefore } = loaderData;
 
 	return (
-		<div className="min-h-svh">
+		<div className="min-h-svh scroll-smooth">
 			<AppHeader user={user}>
 				<Link
 					to={`/spaces/${space.id}`}
@@ -119,6 +119,23 @@ export default function SpaceDays({ loaderData }: Route.ComponentProps) {
 					</div>
 				) : null}
 			</main>
+
+			{/* The tick rail: one tick per page, swelling under the hand. */}
+			{days.length > 2 ? (
+				<nav
+					aria-label="Jump to a day"
+					className="-translate-y-1/2 fixed top-1/2 right-4 hidden flex-col items-end gap-1.5 md:flex"
+				>
+					{days.map((day) => (
+						<a
+							key={day.date}
+							href={`#day-${day.date}`}
+							title={formatDay(day.date)}
+							className="tick block h-0.5 w-4 rounded-full bg-ink-faint transition-all duration-150 hover:w-8 hover:bg-accent"
+						/>
+					))}
+				</nav>
+			) : null}
 		</div>
 	);
 }
