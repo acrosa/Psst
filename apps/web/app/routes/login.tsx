@@ -7,6 +7,7 @@ import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { auth, enabledProviders, getUser } from '~/lib/auth.server';
 import { safeNext } from '~/lib/redirects';
+import { completeInviteIfPresent } from '~/lib/services/invites.server';
 import type { Route } from './+types/login';
 
 export function meta() {
@@ -49,10 +50,18 @@ export async function action({ request }: Route.ActionArgs) {
 		}
 
 		const next = safeNext(new URL(request.url).searchParams.get('next'));
+		let location = next;
+		try {
+			const body = await response.clone().json();
+			const userId = body?.user?.id;
+			if (userId) location = await completeInviteIfPresent(next, userId);
+		} catch {
+			// without the id they land on `next` and can still Join by hand
+		}
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: next,
+				Location: location,
 				'Set-Cookie': response.headers.get('set-cookie') ?? '',
 			},
 		});

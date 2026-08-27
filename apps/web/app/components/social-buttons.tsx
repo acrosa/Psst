@@ -9,6 +9,9 @@ export type Providers = { google: boolean; apple: boolean };
  */
 export function SocialButtons({ providers, next }: { providers: Providers; next: string }) {
 	if (!providers.google && !providers.apple) return null;
+	// Better Auth honors callbackURL after OAuth; /auth/continue accepts an
+	// invite `next` there so OAuth users skip the extra Join click too.
+	const callbackURL = `/auth/continue?next=${encodeURIComponent(next)}`;
 
 	return (
 		<div className="grid gap-2">
@@ -18,7 +21,7 @@ export function SocialButtons({ providers, next }: { providers: Providers; next:
 					variant="soft"
 					className="w-full"
 					onClick={() => {
-						void authClient.signIn.social({ provider: 'google', callbackURL: next });
+						void authClient.signIn.social({ provider: 'google', callbackURL });
 					}}
 				>
 					<GoogleMark />
@@ -31,7 +34,7 @@ export function SocialButtons({ providers, next }: { providers: Providers; next:
 					variant="soft"
 					className="w-full"
 					onClick={() => {
-						void authClient.signIn.social({ provider: 'apple', callbackURL: next });
+						void authClient.signIn.social({ provider: 'apple', callbackURL });
 					}}
 				>
 					<AppleMark />

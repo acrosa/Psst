@@ -20,7 +20,12 @@ import {
 	resizeItem,
 	toggleReaction,
 } from '~/lib/services/items.server';
-import { getSpace, getSpaceMembers, requireMember } from '~/lib/services/spaces.server';
+import {
+	ensureMember,
+	getSpace,
+	getSpaceMembers,
+	requireMember,
+} from '~/lib/services/spaces.server';
 import { publicUrl } from '~/lib/storage.server';
 import type { Route } from './+types/space';
 
@@ -31,7 +36,8 @@ export function meta({ data }: Route.MetaArgs) {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const user = await requireUser(request);
-	await requireMember(params.spaceId, user.id);
+	// A shared canvas link is an open door: signed-in visitors join on arrival.
+	await ensureMember(params.spaceId, user.id);
 	const space = await getSpace(params.spaceId);
 	if (!space) {
 		throw new Response('Not found', { status: 404 });

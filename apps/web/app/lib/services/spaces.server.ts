@@ -124,6 +124,30 @@ export async function getMembership(spaceId: string, userId: string) {
 	return membership ?? null;
 }
 
+/**
+ * The canvas URL is a capability: a signed-in visitor who has the link joins
+ * on arrival (spaces stay tiny — the 8-seat cap still applies). Deliberate
+ * sharing model — revoke by nothing yet; invites remain the polite path.
+ */
+export async function ensureMember(spaceId: string, userId: string) {
+	const existing = await getMembership(spaceId, userId);
+	if (existing) return existing;
+
+	const space = await getSpace(spaceId);
+	if (!space) throw new Response('Not found', { status: 404 });
+
+	const seats = await countSpaceMembers(spaceId);
+	if (seats >= 8) {
+		throw new Response('This corner is full — spaces stay tiny.', { status: 403 });
+	}
+
+	await db.insert(schema.spaceMembers).values({ spaceId, userId, role: 'member' });
+	track({ event: 'joined_via_link', icon: '🚪', userId, tags: { space: space.name } });
+	const membership = await getMembership(spaceId, userId);
+	if (!membership) throw new Response('Not found', { status: 404 });
+	return membership;
+}
+
 /** Membership guard for loaders/actions — 404 (not 403) to avoid leaking existence. */
 export async function requireMember(spaceId: string, userId: string) {
 	const membership = await getMembership(spaceId, userId);

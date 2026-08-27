@@ -44,9 +44,8 @@ test.describe('the core loop', () => {
 			await partnerPage.getByLabel(/password/i).fill(partner.password);
 			await partnerPage.getByRole('button', { name: /create account/i }).click();
 
-			// …one tap to join, and B is standing on the same canvas.
-			await partnerPage.waitForURL('**/invite/**');
-			await partnerPage.getByRole('button', { name: /^join /i }).click();
+			// …and B lands straight on the same canvas — the invite was accepted
+			// during signup, no extra Join click.
 			await partnerPage.waitForURL(spaceUrl);
 
 			// B sees everything A left — including the unfurled postcard.

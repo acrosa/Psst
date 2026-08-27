@@ -89,6 +89,32 @@ export type AcceptResult =
 	| { status: 'joined' | 'already-member'; spaceId: string }
 	| { status: 'invalid' | 'expired' | 'used' | 'full' };
 
+const INVITE_NEXT_RE = /^\/invite\/([^/?#]+)/;
+
+/** Pull an invite token out of a same-origin `next` path, if one is there. */
+export function inviteTokenFromNext(next: string): string | null {
+	const token = INVITE_NEXT_RE.exec(next)?.[1];
+	return token && token.length > 0 ? token : null;
+}
+
+/**
+ * After signup / login / OAuth, consume `next` when it points at an invite
+ * and return the canvas to land on. Sad outcomes (invalid, expired, used,
+ * full) send the user back to the invite page so they see the friendly copy
+ * instead of a random space or a 404. Viewing the invite URL itself is a
+ * GET and never reaches this — only an authenticated accept consumes.
+ */
+export async function completeInviteIfPresent(next: string, userId: string): Promise<string> {
+	const token = inviteTokenFromNext(next);
+	if (!token) return next;
+
+	const result = await acceptInvite({ token, userId });
+	if (result.status === 'joined' || result.status === 'already-member') {
+		return `/spaces/${result.spaceId}`;
+	}
+	return `/invite/${token}`;
+}
+
 export async function acceptInvite(args: { token: string; userId: string }): Promise<AcceptResult> {
 	const lookup = await getInviteByToken(args.token);
 	if (lookup.status !== 'ok') return { status: lookup.status };
