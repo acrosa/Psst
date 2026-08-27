@@ -6,6 +6,7 @@ import {
 	Scripts,
 	ScrollRestoration,
 	isRouteErrorResponse,
+	useNavigation,
 	useRouteLoaderData,
 } from 'react-router';
 import { env } from '~/lib/env.server';
@@ -62,7 +63,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-	return <Outlet />;
+	const navigation = useNavigation();
+	return (
+		<>
+			{navigation.state !== 'idle' ? <div className="nav-progress" aria-hidden /> : null}
+			<Outlet />
+		</>
+	);
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

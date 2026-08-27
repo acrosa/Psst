@@ -79,6 +79,33 @@
 	background: rgb(0 0 0 / 0.55);
 }
 
+/* Top-edge navigation progress: one accent gesture while a loader works.
+   Delayed slightly so instant navigations never flash it. */
+.nav-progress {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 2px;
+	z-index: 100;
+	background: var(--color-accent);
+	box-shadow: 0 0 8px var(--color-accent);
+	animation: nav-progress 2.4s cubic-bezier(0.15, 0.6, 0.3, 1) 0.12s both;
+}
+
+@keyframes nav-progress {
+	0% {
+		width: 0%;
+		opacity: 0;
+	}
+	4% {
+		opacity: 1;
+	}
+	100% {
+		width: 86%;
+		opacity: 1;
+	}
+}
+
 @keyframes pop-in {
 	from {
 		opacity: 0;
