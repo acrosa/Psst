@@ -3,6 +3,7 @@ import { AppHeader } from '~/components/app-header';
 import { AuthCard } from '~/components/auth-card';
 import { Board } from '~/components/canvas/board';
 import { Composer } from '~/components/canvas/composer';
+import { CameraIcon, ChatIcon, PencilIcon, SettingsIcon, SignOutIcon } from '~/components/icons';
 import { AuthDivider, SocialButtons } from '~/components/social-buttons';
 import { SpaceCard } from '~/components/space-card';
 import { AvatarStack } from '~/components/ui/avatar';
@@ -269,6 +270,101 @@ export default function Design() {
 					) : null}
 					<div className="pointer-events-none absolute top-3 right-4 z-10">
 						<AvatarStack people={PEOPLE} />
+					</div>
+				</div>
+			</Screen>
+
+			<Screen label="Feedback — progress, loading, whispers" height={330}>
+				<div className="relative flex h-full flex-col gap-6 p-8">
+					{/* the navigation progress bar, looping for demo */}
+					<div
+						className="nav-progress"
+						style={{ position: 'absolute', animationIterationCount: 'infinite' }}
+					/>
+					<p className="text-ink-soft text-sm">
+						The top-edge bar sweeps while a page loads. Below: the waiting vocabulary.
+					</p>
+					<span className="animate-shimmer font-serif text-ink-soft text-xl italic">
+						setting the table…
+					</span>
+					<div className="flex items-center gap-4">
+						<span className="animate-shimmer rounded-full bg-card px-3 py-1.5 font-serif text-lg text-ink-soft italic shadow-card">
+							tucking it in — 2 to go
+						</span>
+						<span className="rounded-lg bg-accent-soft px-3 py-1.5 text-accent-deep text-sm shadow-card">
+							a friendly error, in the tinted wash
+						</span>
+					</div>
+					<div className="grid h-24 w-72 place-items-center rounded-xl border-2 border-accent border-dashed bg-card/50">
+						<p className="font-serif text-ink-soft text-xl italic">drop it on the board</p>
+					</div>
+				</div>
+			</Screen>
+
+			<Screen label="Details — menus, dialogs, the pencil" height={420}>
+				<div className="flex h-full flex-wrap items-start gap-10 p-8">
+					{/* account menu, open (static replica) */}
+					<div className="w-52 rounded-lg border border-line bg-card p-1 shadow-lift">
+						<span className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition hover:bg-paper-deep">
+							<CameraIcon className="h-4 w-4 text-ink-soft" />
+							Change photo
+						</span>
+						<span className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition hover:bg-paper-deep">
+							<SettingsIcon className="h-4 w-4 text-ink-soft" />
+							Space settings
+						</span>
+						<div className="mx-2 my-1 h-px bg-line" />
+						<span className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition hover:bg-paper-deep">
+							<SignOutIcon className="h-4 w-4 text-ink-soft" />
+							Sign out
+						</span>
+					</div>
+
+					{/* confirm dialog (static replica) */}
+					<div className="w-[min(24rem,100%)] rounded-xl border border-line bg-card p-5 shadow-lift">
+						<h3 className="mb-3 font-serif text-2xl">Take this off the board?</h3>
+						<p className="text-ink-soft text-sm">
+							It leaves the canvas for everyone — quietly, no trace.
+						</p>
+						<div className="mt-5 flex justify-end gap-2">
+							<Button variant="ghost">Keep it</Button>
+							<Button>Take it off</Button>
+						</div>
+					</div>
+
+					{/* draw toolbar (static replica) */}
+					<div className="flex w-full max-w-xl items-center gap-2 rounded-full border border-line bg-card px-3 py-2 shadow-lift">
+						<span className="flex items-center gap-1.5">
+							{['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'].map(
+								(color, index) => (
+									<span
+										key={color}
+										style={{ backgroundColor: color }}
+										className={
+											index === 1
+												? 'h-6 w-6 rounded-full ring-2 ring-ink/40 ring-offset-2 ring-offset-card'
+												: 'h-6 w-6 rounded-full'
+										}
+									/>
+								),
+							)}
+						</span>
+						<span className="flex-1 text-center font-serif text-ink-soft text-sm italic">
+							draw — pause and it settles onto the board
+						</span>
+						<span className="grid h-9 w-9 place-items-center rounded-full text-ink-soft">
+							<PencilIcon className="h-[18px] w-[18px]" />
+						</span>
+					</div>
+
+					{/* caption badges (static replica) */}
+					<div className="flex items-center gap-1.5">
+						<span className="flex items-center gap-1.5 rounded-lg bg-card/90 px-2 py-1.5 font-semibold text-ink-soft text-xs shadow-card">
+							<ChatIcon className="h-3.5 w-3.5" />2
+						</span>
+						<span className="flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1.5 text-xs shadow-card">
+							🫶 <span className="font-semibold text-ink-soft">2</span>
+						</span>
 					</div>
 				</div>
 			</Screen>
