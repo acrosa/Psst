@@ -198,7 +198,16 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 		<div className="flex h-svh flex-col">
 			<AppHeader
 				user={user}
-				menuLinks={[{ label: 'Space settings', to: `/spaces/${space.id}/settings` }]}
+				menuLinks={[
+					{ label: 'Invite', onClick: () => setInviting(true), icon: 'invite', mobileOnly: true },
+					{
+						label: 'Timeline',
+						to: `/spaces/${space.id}/days`,
+						icon: 'timeline',
+						mobileOnly: true,
+					},
+					{ label: 'Space settings', to: `/spaces/${space.id}/settings`, icon: 'settings' },
+				]}
 			>
 				<div className="flex min-w-0 items-center gap-2 sm:gap-3">
 					<span className="shrink-0 text-xl sm:text-2xl" aria-hidden>
@@ -212,12 +221,14 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 							Today · {formatDay(board.date)}
 						</div>
 					</div>
-					<Button size="sm" className="shrink-0" onClick={() => setInviting(true)}>
-						Invite
-					</Button>
+					<span className="hidden shrink-0 sm:block">
+						<Button size="sm" onClick={() => setInviting(true)}>
+							Invite
+						</Button>
+					</span>
 					<Link
 						to={`/spaces/${space.id}/days`}
-						className="shrink-0 rounded-lg px-1.5 py-1.5 text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink sm:px-2"
+						className="hidden shrink-0 rounded-lg px-1.5 py-1.5 text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink sm:block sm:px-2"
 					>
 						Timeline
 					</Link>
