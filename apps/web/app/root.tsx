@@ -27,10 +27,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	const withFonts = data?.withFonts ?? true;
 
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				{/* Theme follows the device, nothing to configure: set .dark before
+				    first paint and track prefers-color-scheme live. */}
+				<script
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: static theme bootstrap, no user input
+					dangerouslySetInnerHTML={{
+						__html: `(function(){try{var media=matchMedia('(prefers-color-scheme: dark)');var apply=function(){document.documentElement.classList.toggle('dark',media.matches)};apply();media.addEventListener('change',apply)}catch(e){}})()`,
+					}}
+				/>
 				<Meta />
 				<Links />
 				{withFonts ? (
@@ -39,7 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 						<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 						<link
 							rel="stylesheet"
-							href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Caveat:wght@400..700&display=swap"
+							href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap"
 						/>
 					</>
 				) : null}
@@ -74,7 +82,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	return (
 		<main className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
 			<div className="text-5xl">🫥</div>
-			<h1 className="font-hand text-3xl">{title}</h1>
+			<h1 className="font-serif text-3xl">{title}</h1>
 			<p className="max-w-sm text-ink-soft">{detail}</p>
 			<Link
 				to="/"

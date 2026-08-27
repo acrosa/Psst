@@ -8,6 +8,7 @@ test.describe('the core loop', () => {
 		page,
 		browser,
 	}) => {
+		test.slow(); // two browser contexts + cold route compiles
 		// A signs up — no onboarding, no naming step: a canvas is already theirs.
 		await registerUser(page);
 		const spaceUrl = page.url();
@@ -54,7 +55,7 @@ test.describe('the core loop', () => {
 
 			// B flips A's note, reacts, and writes on the back.
 			const partnerNote = partnerPage.locator('.react-flow__node', { hasText: 'psst, welcome' });
-			await partnerNote.click();
+			await partnerNote.getByRole('button', { name: /flip to write on the back/i }).click();
 			await partnerNote.getByRole('button', { name: /🫶/ }).click();
 			await expect(partnerNote.getByRole('button', { name: /🫶/ })).toHaveAttribute(
 				'aria-pressed',
@@ -62,13 +63,13 @@ test.describe('the core loop', () => {
 			);
 			await partnerNote.getByPlaceholder(/write on the back/i).fill('love this');
 			await partnerNote.getByPlaceholder(/write on the back/i).press('Enter');
-			await expect(partnerNote.getByText('love this')).toBeVisible();
+			await expect(partnerNote.getByText('love this').first()).toBeVisible();
 
 			// A flips the same card and watches B's reply arrive on its own (polling).
 			const ownerNote = page.locator('.react-flow__node', { hasText: 'psst, welcome' });
-			await ownerNote.click();
-			await expect(ownerNote.getByText('love this')).toBeVisible({ timeout: 10_000 });
-			await expect(ownerNote.getByText(`${partner.name}:`)).toBeVisible();
+			await ownerNote.getByRole('button', { name: /read the back/i }).click();
+			await expect(ownerNote.getByText('love this').first()).toBeVisible({ timeout: 10_000 });
+			await expect(ownerNote.getByText(`${partner.name}:`).first()).toBeVisible();
 			await expect(ownerNote.getByRole('button', { name: /🫶/ })).toContainText('1');
 
 			// Both members show up in settings.

@@ -22,7 +22,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	if (spaces.length === 0) {
 		throw redirect('/onboarding');
 	}
-	return { user: { name: user.name ?? null }, spaces };
+	return { user: { name: user.name ?? null, image: user.image ?? null }, spaces };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -49,10 +49,10 @@ export default function Spaces({ loaderData, actionData }: Route.ComponentProps)
 
 	return (
 		<div className="min-h-svh">
-			<AppHeader userName={loaderData.user.name} />
+			<AppHeader user={loaderData.user} />
 			<main className="mx-auto max-w-3xl p-6">
 				<div className="mb-6 flex items-center justify-between">
-					<h1 className="font-hand text-3xl">Your spaces</h1>
+					<h1 className="font-serif text-3xl">Your spaces</h1>
 					<Button variant="soft" onClick={() => setCreating(true)}>
 						＋ New space
 					</Button>

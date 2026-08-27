@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
+import { TrashIcon } from '~/components/icons';
+import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { REACTION_EMOJIS } from '~/lib/design';
 import type { BoardItem } from '~/lib/services/canvases.server';
@@ -28,12 +30,21 @@ export function CardBack({
 	const reactionFetcher = useFetcher();
 	const deleteFetcher = useFetcher();
 	const formRef = useRef<HTMLFormElement>(null);
+	const threadRef = useRef<HTMLDivElement>(null);
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	useEffect(() => {
 		if (commentFetcher.state === 'idle' && !commentFetcher.data?.error) {
 			formRef.current?.reset();
 		}
 	}, [commentFetcher.state, commentFetcher.data]);
+
+	// Keep the newest note in view — pinned to the bottom like a thread.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll on new comments
+	useEffect(() => {
+		const thread = threadRef.current;
+		if (thread) thread.scrollTop = thread.scrollHeight;
+	}, [item.comments.length]);
 
 	const reactionCounts = new Map<string, { count: number; mine: boolean }>();
 	for (const reaction of item.reactions) {
@@ -45,27 +56,27 @@ export function CardBack({
 
 	return (
 		<div className="flex h-full w-full flex-col gap-2 rounded-lg border border-line bg-card p-3 shadow-card">
-			{/* Postmark */}
-			<div className="flex items-start justify-between gap-2">
-				<div className="min-w-0 text-xs text-ink-soft">
-					<div className="truncate font-medium text-ink">{item.authorName ?? 'Someone'}</div>
-					<div>{timeOfDay(item.createdAt)}</div>
-				</div>
-				<div
-					className="grid h-8 w-8 shrink-0 rotate-6 place-items-center rounded-sm border border-line border-dashed text-sm"
-					aria-hidden
-				>
-					📮
-				</div>
+			{/* Postmark row */}
+			<div className="flex items-baseline justify-between gap-2">
+				<span className="truncate font-medium text-ink text-xs">
+					{item.authorName ?? 'Someone'}
+				</span>
+				<span className="shrink-0 font-mono text-[10px] text-ink-faint uppercase tracking-wider">
+					{timeOfDay(item.createdAt)}
+				</span>
 			</div>
 
-			{/* The small thread */}
-			<div className="nodrag min-h-0 flex-1 space-y-1 overflow-y-auto" data-noflip>
+			{/* The small thread — newest pinned into view */}
+			<div
+				ref={threadRef}
+				className="nodrag nowheel min-h-0 flex-1 space-y-1.5 overflow-y-auto"
+				data-noflip
+			>
 				{item.comments.length === 0 ? (
-					<p className="font-hand text-lg text-ink-faint">nothing on the back yet…</p>
+					<p className="font-serif text-ink-faint text-sm italic">nothing on the back yet…</p>
 				) : (
 					item.comments.map((comment) => (
-						<p key={comment.id} className="font-hand text-lg leading-snug">
+						<p key={comment.id} className="font-serif text-[15px] leading-snug">
 							<span className="text-ink-soft">{comment.authorName ?? 'Someone'}:</span>{' '}
 							{comment.text}
 						</p>
@@ -82,13 +93,13 @@ export function CardBack({
 						placeholder="write on the back…"
 						maxLength={280}
 						autoComplete="off"
-						className="w-full rounded-md border border-line bg-paper px-2 py-1 font-hand text-lg outline-none placeholder:text-ink-faint focus:border-accent"
+						className="w-full rounded-md border border-line bg-paper px-2.5 py-1.5 font-serif text-[15px] outline-none placeholder:text-ink-faint focus:border-accent"
 					/>
 				</commentFetcher.Form>
 			) : null}
 
 			{/* Reactions + remove */}
-			<div className="nodrag flex items-center gap-1" data-noflip>
+			<div className="nodrag flex items-center gap-0.5" data-noflip>
 				{REACTION_EMOJIS.map((emoji) => {
 					const entry = reactionCounts.get(emoji);
 					return (
@@ -104,33 +115,40 @@ export function CardBack({
 								)
 							}
 							className={cn(
-								'rounded-md px-1 py-0.5 text-sm transition hover:bg-paper-deep disabled:pointer-events-none',
+								'flex h-7 items-center rounded-md px-1.5 text-sm transition hover:bg-paper-deep disabled:pointer-events-none',
 								entry?.mine && 'bg-accent-soft',
 								!entry && 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100',
 							)}
 						>
 							{emoji}
-							{entry ? <span className="ml-0.5 text-xs text-ink-soft">{entry.count}</span> : null}
+							{entry ? (
+								<span className="ml-1 font-medium text-[11px] text-ink-soft">{entry.count}</span>
+							) : null}
 						</button>
 					);
 				})}
 				<span className="flex-1" />
 				{!frozen && item.authorId === currentUserId ? (
-					<button
-						type="button"
-						aria-label="Remove from the board"
-						onClick={() => {
-							if (window.confirm('Take this off the board?')) {
-								deleteFetcher.submit(
-									{ intent: 'delete-item', itemId: item.id },
-									{ method: 'post' },
-								);
+					<>
+						<button
+							type="button"
+							aria-label="Remove from the board"
+							onClick={() => setConfirmingDelete(true)}
+							className="grid h-7 w-7 place-items-center rounded-md text-ink-faint transition hover:bg-accent-soft hover:text-accent-deep"
+						>
+							<TrashIcon className="h-3.5 w-3.5" />
+						</button>
+						<ConfirmDialog
+							open={confirmingDelete}
+							onClose={() => setConfirmingDelete(false)}
+							onConfirm={() =>
+								deleteFetcher.submit({ intent: 'delete-item', itemId: item.id }, { method: 'post' })
 							}
-						}}
-						className="rounded-md px-1 py-0.5 text-sm text-ink-faint transition hover:bg-accent-soft hover:text-accent-deep"
-					>
-						🗑
-					</button>
+							title="Take this off the board?"
+							message="It leaves the canvas for everyone — quietly, no trace."
+							confirmLabel="Take it off"
+						/>
+					</>
 				) : null}
 			</div>
 		</div>

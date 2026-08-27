@@ -19,6 +19,8 @@ const schema = z.object({
 	BETTER_AUTH_URL: z.string().url().default('http://localhost:3000'),
 	GOOGLE_CLIENT_ID: z.string().optional(),
 	GOOGLE_CLIENT_SECRET: z.string().optional(),
+	APPLE_CLIENT_ID: z.string().optional(),
+	APPLE_CLIENT_SECRET: z.string().optional(),
 
 	// Jobs: inline (default, no worker needed) or queue (pg-boss + `pnpm worker`)
 	JOBS_MODE: z.enum(['inline', 'queue']).default('inline'),

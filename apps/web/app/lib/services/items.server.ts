@@ -1,6 +1,7 @@
 import { and, count, eq, isNull, max } from 'drizzle-orm';
 import { localDate } from '../dates';
 import { db, schema } from '../db/client.server';
+import { clampScale } from '../design';
 import { enqueue } from '../jobs.server';
 import { track } from '../metrics.server';
 import { putObject } from '../storage.server';
@@ -28,12 +29,56 @@ function parseHttpUrl(raw: string): URL {
 	return url;
 }
 
+export type DropPosition = { x: number; y: number };
+
+/** Validate a pencil drawing payload: one color, a bounded M/L path, a size. */
+function parseDrawingContent(raw: string) {
+	let parsed: { color?: unknown; d?: unknown; w?: unknown; h?: unknown };
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		reject('That drawing didn’t survive the trip.');
+	}
+	const { color, d, w, h } = parsed;
+	if (typeof color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+		reject('Pick a pencil color.');
+	}
+	if (typeof d !== 'string' || d.length === 0 || d.length > 20_000 || !/^[ML0-9,. -]+$/.test(d)) {
+		reject('That drawing didn’t survive the trip.');
+	}
+	if (
+		typeof w !== 'number' ||
+		typeof h !== 'number' ||
+		!Number.isFinite(w) ||
+		!Number.isFinite(h) ||
+		w < 8 ||
+		h < 8 ||
+		w > 2000 ||
+		h > 2000
+	) {
+		reject('Drawings stay on the table — a bit smaller.');
+	}
+	return { color, d, w: Math.round(w), h: Math.round(h) };
+}
+
 /**
  * Gentle auto-placement: items flow into a loose collage (4 to a row, with a
  * little jitter and rotation) so nothing ever buries what came before.
- * Members rearrange from there — that's the point.
+ * Members rearrange from there — that's the point. A drag-drop or paste can
+ * pin the position instead (`at`), keeping the rotation charm.
  */
-async function nextPlacement(canvasId: string) {
+async function nextPlacement(canvasId: string, at?: DropPosition) {
+	const [top] = await db
+		.select({ z: max(schema.items.z) })
+		.from(schema.items)
+		.where(eq(schema.items.canvasId, canvasId));
+	const z = (top?.z ?? 0) + 1;
+	const rotation = Math.round((Math.random() * 6 - 3) * 10) / 10;
+
+	if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) {
+		return { x: at.x, y: at.y, z, rotation };
+	}
+
 	const [counted] = await db
 		.select({ value: count() })
 		.from(schema.items)
@@ -41,37 +86,34 @@ async function nextPlacement(canvasId: string) {
 		.limit(1);
 	const index = counted?.value ?? 0;
 
-	const [top] = await db
-		.select({ z: max(schema.items.z) })
-		.from(schema.items)
-		.where(eq(schema.items.canvasId, canvasId));
-
 	const column = index % 4;
 	const row = Math.floor(index / 4);
 	const jitter = () => Math.round((Math.random() - 0.5) * 60);
 
 	return {
-		x: column * 330 + jitter(),
-		y: row * 270 + jitter(),
-		z: (top?.z ?? 0) + 1,
-		rotation: Math.round((Math.random() * 6 - 3) * 10) / 10,
+		x: column * 370 + jitter(),
+		y: row * 350 + jitter(),
+		z,
+		rotation,
 	};
 }
 
 export type CreateItemInput = {
 	spaceId: string;
 	userId: string;
-	kind: 'link' | 'note' | 'emoji';
+	kind: 'link' | 'note' | 'emoji' | 'drawing';
 	content: string;
+	/** Optional pinned position (drag-drop / paste); omitted → collage flow. */
+	position?: DropPosition;
 };
 
-export async function createItem({ spaceId, userId, kind, content }: CreateItemInput) {
+export async function createItem({ spaceId, userId, kind, content, position }: CreateItemInput) {
 	await requireMember(spaceId, userId);
 	const space = await getSpace(spaceId);
 	if (!space) reject('Space not found.');
 
 	const canvas = await getOrCreateTodayCanvas(spaceId, space.timezone);
-	const placement = await nextPlacement(canvas.id);
+	const placement = await nextPlacement(canvas.id, position);
 
 	let values: typeof schema.items.$inferInsert;
 
@@ -94,6 +136,15 @@ export async function createItem({ spaceId, userId, kind, content }: CreateItemI
 			authorId: userId,
 			type: 'emoji',
 			text: emoji,
+			...placement,
+		};
+	} else if (kind === 'drawing') {
+		values = {
+			canvasId: canvas.id,
+			spaceId,
+			authorId: userId,
+			type: 'drawing',
+			text: JSON.stringify(parseDrawingContent(content)),
 			...placement,
 		};
 	} else {
@@ -165,6 +216,22 @@ export async function moveItem(args: { itemId: string; userId: string; x: number
 	track({ event: 'item_moved', icon: '🫳', userId: args.userId, tags: { type: item.type } });
 }
 
+/** Anyone in the space can let a card breathe — clamped so nothing takes over. */
+export async function resizeItem(args: { itemId: string; userId: string; scale: number }) {
+	const { item } = await getMutableItem(args.itemId, args.userId);
+
+	if (!Number.isFinite(args.scale)) {
+		throw new Response('Bad scale', { status: 400 });
+	}
+
+	await db
+		.update(schema.items)
+		.set({ scale: clampScale(args.scale) })
+		.where(eq(schema.items.id, item.id));
+
+	track({ event: 'item_resized', icon: '🔍', userId: args.userId, tags: { type: item.type } });
+}
+
 /** Authors take their own things back off the board. */
 export async function deleteItem(args: { itemId: string; userId: string }) {
 	const { item } = await getMutableItem(args.itemId, args.userId);
@@ -182,6 +249,7 @@ export async function addComment(args: { itemId: string; userId: string; text: s
 	}
 
 	const { item } = await getMutableItem(args.itemId, args.userId);
+	if (item.type === 'emoji') reject('Stickers stay silent — no backs to write on.');
 	const [comment] = await db
 		.insert(schema.itemComments)
 		.values({ itemId: item.id, authorId: args.userId, text })
@@ -196,6 +264,7 @@ export async function toggleReaction(args: { itemId: string; userId: string; emo
 	if (!emoji || [...emoji].length > 4) reject('That’s not an emoji.');
 
 	const { item } = await getMutableItem(args.itemId, args.userId);
+	if (item.type === 'emoji') reject('Stickers stay silent — no reactions.');
 
 	const [existing] = await db
 		.select()
@@ -232,7 +301,12 @@ const IMAGE_EXT_BY_MIME: Record<string, string> = {
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-export async function createImageItem(args: { spaceId: string; userId: string; file: File }) {
+export async function createImageItem(args: {
+	spaceId: string;
+	userId: string;
+	file: File;
+	position?: DropPosition;
+}) {
 	await requireMember(args.spaceId, args.userId);
 	const space = await getSpace(args.spaceId);
 	if (!space) reject('Space not found.');
@@ -243,7 +317,7 @@ export async function createImageItem(args: { spaceId: string; userId: string; f
 	if (args.file.size === 0) reject('That file looks empty.');
 
 	const canvas = await getOrCreateTodayCanvas(args.spaceId, space.timezone);
-	const placement = await nextPlacement(canvas.id);
+	const placement = await nextPlacement(canvas.id, args.position);
 
 	const [item] = await db
 		.insert(schema.items)

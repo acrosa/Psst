@@ -28,7 +28,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	const days = await getTimelinePreviews(canvases, publicUrl);
 
 	return {
-		user: { name: user.name ?? null },
+		user: { name: user.name ?? null, image: user.image ?? null },
 		space: { id: space.id, name: space.name, emoji: space.emoji },
 		days,
 		nextBefore: canvases.length === 30 ? canvases[canvases.length - 1].date : null,
@@ -38,7 +38,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 function Peek({ peek }: { peek: DayPeek }) {
 	if (peek.type === 'note') {
 		return (
-			<span className="line-clamp-2 max-w-24 rounded-sm bg-butter px-1.5 py-1 font-hand text-sm leading-tight">
+			<span className="line-clamp-2 max-w-24 rounded-sm bg-butter px-1.5 py-1 font-serif text-sm leading-tight">
 				{peek.text}
 			</span>
 		);
@@ -61,7 +61,7 @@ export default function SpaceDays({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<div className="min-h-svh">
-			<AppHeader userName={user.name}>
+			<AppHeader user={user}>
 				<Link
 					to={`/spaces/${space.id}`}
 					className="text-sm text-ink-soft transition hover:text-ink"
@@ -71,13 +71,13 @@ export default function SpaceDays({ loaderData }: Route.ComponentProps) {
 			</AppHeader>
 
 			<main className="mx-auto max-w-2xl p-6">
-				<h1 className="font-hand text-3xl">The scrapbook</h1>
+				<h1 className="font-serif text-3xl">The scrapbook</h1>
 				<p className="mt-1 text-sm text-ink-soft">Every day archives itself as you left it.</p>
 
 				{days.length === 0 ? (
 					<div className="mt-16 text-center">
 						<div className="text-5xl">📖</div>
-						<p className="mt-3 font-hand text-2xl text-ink-soft">No pages yet</p>
+						<p className="mt-3 font-serif text-2xl text-ink-soft italic">No pages yet</p>
 						<p className="mt-1 text-sm text-ink-faint">
 							Tomorrow, today's board becomes the first page in your scrapbook.
 						</p>

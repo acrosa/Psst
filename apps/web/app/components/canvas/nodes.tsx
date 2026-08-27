@@ -1,5 +1,8 @@
 import type { NodeProps } from '@xyflow/react';
 import { useState } from 'react';
+import { useFetcher } from 'react-router';
+import { ArrowUpRightIcon, ChatIcon, XIcon } from '~/components/icons';
+import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, seededTone } from '~/lib/design';
 import type { BoardItem } from '~/lib/services/canvases.server';
@@ -11,6 +14,7 @@ export type BoardNodeData = {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
+	onResize?: (itemId: string, scale: number) => void;
 };
 
 type BoardNodeProps = NodeProps & { data: BoardNodeData };
@@ -45,6 +49,7 @@ export function PostcardNode({ data }: BoardNodeProps) {
 					<div className="text-xs text-ink-faint">{host}</div>
 				</div>
 				<PostageStamp />
+				<OpenLink url={item.url} />
 			</div>
 		) : unfurl.status === 'ok' ? (
 			<div className="relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
@@ -60,7 +65,7 @@ export function PostcardNode({ data }: BoardNodeProps) {
 				) : (
 					<div className="flex min-h-0 flex-1 items-center justify-center bg-sky text-4xl">🔗</div>
 				)}
-				<div className="space-y-0.5 p-2.5">
+				<div className="space-y-1 p-3">
 					<div className="line-clamp-2 text-sm font-medium leading-snug">
 						{unfurl.title ?? host}
 					</div>
@@ -89,6 +94,9 @@ export function PostcardNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
+			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={front}
 			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
@@ -108,6 +116,9 @@ export function SlipNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
+			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div
@@ -116,7 +127,7 @@ export function SlipNode({ data }: BoardNodeProps) {
 						seededTone(item.id),
 					)}
 				>
-					<p className="line-clamp-6 max-h-full font-hand text-2xl leading-snug [overflow-wrap:anywhere]">
+					<p className="line-clamp-6 max-h-full font-serif text-2xl leading-snug [overflow-wrap:anywhere]">
 						{item.text}
 					</p>
 				</div>
@@ -126,10 +137,9 @@ export function SlipNode({ data }: BoardNodeProps) {
 	);
 }
 
-/** Emoji → oversized sticker. */
+/** Emoji → oversized sticker. Stickers stay silent: no back, no thread. */
 export function StickerNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
-	const [flipped, setFlipped] = useFlip();
 	const size = ITEM_SIZES.emoji;
 
 	return (
@@ -137,15 +147,165 @@ export function StickerNode({ data }: BoardNodeProps) {
 			width={size.w}
 			height={size.h}
 			rotation={item.rotation}
-			flipped={flipped}
-			onToggle={() => setFlipped((f) => !f)}
+			flipped={false}
+			flippable={false}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onToggle={() => {}}
 			front={
-				<div className="grid h-full w-full place-items-center text-7xl [filter:drop-shadow(0_6px_10px_rgb(64_56_47/0.18))]">
+				<div className="group/sticker grid h-full w-full place-items-center text-7xl [filter:drop-shadow(0_6px_10px_rgb(64_56_47/0.18))]">
 					<span>{item.text}</span>
+					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
 				</div>
 			}
-			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
 		/>
+	);
+}
+
+/** Drawing → a free pencil stroke, floating on the paper. Silent like stickers. */
+export function DrawingNode({ data }: BoardNodeProps) {
+	const { item, currentUserId, frozen } = data;
+	const drawing = parseDrawing(item.text);
+
+	return (
+		<FlipCard
+			width={drawing.w}
+			height={drawing.h}
+			rotation={item.rotation}
+			flipped={false}
+			flippable={false}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onToggle={() => {}}
+			front={
+				<div className="group/sticker h-full w-full">
+					<svg
+						viewBox={`0 0 ${drawing.w} ${drawing.h}`}
+						className="h-full w-full overflow-visible"
+						aria-hidden
+					>
+						<path
+							d={drawing.d}
+							stroke={drawing.color}
+							strokeWidth={4}
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							fill="none"
+						/>
+					</svg>
+					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
+				</div>
+			}
+		/>
+	);
+}
+
+export type DrawingData = { color: string; d: string; w: number; h: number };
+
+function parseDrawing(raw: string | null): DrawingData {
+	try {
+		const parsed = JSON.parse(raw ?? '');
+		if (typeof parsed.d === 'string' && parsed.w > 0 && parsed.h > 0) return parsed;
+	} catch {
+		// fall through
+	}
+	return { color: 'var(--color-ink)', d: '', w: 96, h: 96 };
+}
+
+/** Author-only ×, fading in on hover — silent items still leave the board. */
+function HoverDelete({
+	item,
+	currentUserId,
+	frozen,
+}: {
+	item: BoardItem;
+	currentUserId: string;
+	frozen: boolean;
+}) {
+	const deleteFetcher = useFetcher();
+	const [confirming, setConfirming] = useState(false);
+	if (frozen || item.authorId !== currentUserId) return null;
+
+	return (
+		<>
+			<button
+				type="button"
+				aria-label="Remove from the board"
+				onClick={() => setConfirming(true)}
+				className="nodrag -top-1.5 -right-1.5 absolute grid h-6 w-6 place-items-center rounded-full border border-line bg-card text-ink-soft opacity-0 shadow-card transition-opacity hover:text-accent-deep group-hover/sticker:opacity-100"
+			>
+				<XIcon className="h-3 w-3" />
+			</button>
+			<ConfirmDialog
+				open={confirming}
+				onClose={() => setConfirming(false)}
+				onConfirm={() =>
+					deleteFetcher.submit({ intent: 'delete-item', itemId: item.id }, { method: 'post' })
+				}
+				title="Take this off the board?"
+				message="It leaves the canvas for everyone — quietly, no trace."
+				confirmLabel="Take it off"
+			/>
+		</>
+	);
+}
+
+/**
+ * The caption row beneath the card's bottom-left corner — the chat chip (with
+ * count once there's a thread) and the reactions so far. Clicking it flips the
+ * card: this row IS the flip affordance.
+ */
+function CardBadges({ item, onFlip }: { item: BoardItem; onFlip: () => void }) {
+	const reactionCounts = new Map<string, number>();
+	for (const reaction of item.reactions) {
+		reactionCounts.set(reaction.emoji, (reactionCounts.get(reaction.emoji) ?? 0) + 1);
+	}
+	const count = item.comments.length;
+	const latest = item.comments.slice(-2);
+	const label =
+		count > 0
+			? `Read the back — ${count} ${count === 1 ? 'note' : 'notes'}`
+			: 'Flip to write on the back';
+
+	return (
+		<button
+			type="button"
+			onClick={onFlip}
+			aria-label={label}
+			title={label}
+			data-testid="card-badges"
+			className="nodrag absolute top-full left-0 mt-2 flex w-full flex-col items-start gap-1.5 text-left"
+		>
+			<span className="flex items-center gap-1.5">
+				<span
+					className={cn(
+						'flex items-center gap-1.5 rounded-lg bg-card/90 px-2 py-1.5 font-semibold text-ink-soft text-xs shadow-card backdrop-blur transition hover:scale-105 hover:text-ink',
+						count === 0 && 'opacity-70 hover:opacity-100',
+					)}
+				>
+					<ChatIcon className="h-3.5 w-3.5" />
+					{count > 0 ? count : null}
+				</span>
+				{[...reactionCounts].map(([emoji, total]) => (
+					<span
+						key={emoji}
+						className="flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1.5 text-xs shadow-card backdrop-blur"
+					>
+						{emoji}
+						{total > 1 ? <span className="font-semibold text-ink-soft">{total}</span> : null}
+					</span>
+				))}
+			</span>
+			{/* The tail of the thread, peeking out without a flip */}
+			{latest.map((comment) => (
+				<span
+					key={comment.id}
+					className="max-w-full truncate font-serif text-[13px] text-ink-soft leading-tight"
+				>
+					<span className="text-ink-faint">{comment.authorName ?? 'Someone'}:</span> {comment.text}
+				</span>
+			))}
+		</button>
 	);
 }
 
@@ -167,13 +327,34 @@ function OpenLink({ url }: { url: string | null }) {
 			href={url}
 			target="_blank"
 			rel="noreferrer noopener"
-			aria-label="Open link"
 			data-noflip
-			className="nodrag absolute right-1.5 bottom-1.5 rounded-md bg-card/80 px-1.5 py-0.5 text-xs text-ink-soft shadow-card backdrop-blur transition hover:text-ink"
+			className="nodrag absolute right-2 bottom-2 flex items-center gap-1.5 rounded-md bg-card/90 px-2.5 py-1.5 font-semibold text-[11px] text-ink-soft uppercase tracking-wider shadow-card backdrop-blur transition hover:bg-accent hover:text-white"
 		>
-			↗
+			Visit
+			<ArrowUpRightIcon className="h-3 w-3" />
 		</a>
 	);
+}
+
+// The polaroid frame around the photo, in px (p-2.5 sides/top, pb-8 chin).
+const PRINT_FRAME_X = 20;
+const PRINT_FRAME_TOP = 10;
+const PRINT_FRAME_BOTTOM = 32;
+const PRINT_PHOTO_MAX = 240;
+
+/**
+ * Size the print to the photo's aspect ratio (fit inside a square), so
+ * nothing gets clipped. Extreme panoramas/slivers are gently clamped.
+ */
+function printSize(photo?: { width: number | null; height: number | null }) {
+	const ratio = photo?.width && photo?.height ? photo.width / photo.height : 1;
+	const clamped = Math.min(1.8, Math.max(0.6, ratio));
+	const photoW = clamped >= 1 ? PRINT_PHOTO_MAX : PRINT_PHOTO_MAX * clamped;
+	const photoH = clamped >= 1 ? PRINT_PHOTO_MAX / clamped : PRINT_PHOTO_MAX;
+	return {
+		w: Math.round(photoW + PRINT_FRAME_X),
+		h: Math.round(photoH + PRINT_FRAME_TOP + PRINT_FRAME_BOTTOM),
+	};
 }
 
 /** Image → photo print with blurhash bloom. */
@@ -181,12 +362,12 @@ export function PrintNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const [flipped, setFlipped] = useFlip();
 	const [loaded, setLoaded] = useState(false);
-	const size = ITEM_SIZES.image;
 
 	const photo =
 		item.assets.find((asset) => asset.kind === 'thumb') ??
 		item.assets.find((asset) => asset.kind === 'original');
 	const blurhash = photo?.blurhash ?? null;
+	const size = printSize(photo);
 
 	return (
 		<FlipCard
@@ -194,9 +375,12 @@ export function PrintNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
+			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
-				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2 pb-7 shadow-card">
+				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2.5 pb-8 shadow-card">
 					<div className="relative min-h-0 flex-1 overflow-hidden rounded-sm bg-paper-deep">
 						{blurhash ? (
 							<BlurhashCanvas

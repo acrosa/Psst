@@ -17,6 +17,7 @@ import {
 	createItem,
 	deleteItem,
 	moveItem,
+	resizeItem,
 	toggleReaction,
 } from '~/lib/services/items.server';
 import { getSpace, getSpaceMembers, requireMember } from '~/lib/services/spaces.server';
@@ -43,12 +44,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	const items = await getBoardItems(canvas.id, publicUrl);
 
 	return {
-		user: { id: user.id, name: user.name ?? null },
+		user: { id: user.id, name: user.name ?? null, image: user.image ?? null },
 		space: { id: space.id, name: space.name, emoji: space.emoji, timezone: space.timezone },
 		members,
 		board: { date: canvas.date, items },
 		pollMs: env.NODE_ENV === 'test' ? 2000 : 10_000,
 	};
+}
+
+/** Optional drop/paste position; absent or malformed → collage auto-placement. */
+function parsePosition(formData: FormData) {
+	const x = Number.parseFloat(String(formData.get('x') ?? ''));
+	const y = Number.parseFloat(String(formData.get('y') ?? ''));
+	return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : undefined;
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -73,7 +81,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			}
 			case 'create-item': {
 				const kind = String(formData.get('kind') ?? 'note');
-				if (kind !== 'link' && kind !== 'note' && kind !== 'emoji') {
+				if (kind !== 'link' && kind !== 'note' && kind !== 'emoji' && kind !== 'drawing') {
 					return { error: 'Unknown item kind.' };
 				}
 				await createItem({
@@ -81,6 +89,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 					userId: user.id,
 					kind,
 					content: String(formData.get('content') ?? ''),
+					position: parsePosition(formData),
 				});
 				return { ok: true };
 			}
@@ -89,7 +98,12 @@ export async function action({ request, params }: Route.ActionArgs) {
 				if (!(file instanceof File) || file.size === 0) {
 					return { error: 'Pick a photo first.' };
 				}
-				await createImageItem({ spaceId: params.spaceId, userId: user.id, file });
+				await createImageItem({
+					spaceId: params.spaceId,
+					userId: user.id,
+					file,
+					position: parsePosition(formData),
+				});
 				return { ok: true };
 			}
 			case 'move-item': {
@@ -98,6 +112,14 @@ export async function action({ request, params }: Route.ActionArgs) {
 					userId: user.id,
 					x: Number.parseFloat(String(formData.get('x'))),
 					y: Number.parseFloat(String(formData.get('y'))),
+				});
+				return { ok: true };
+			}
+			case 'resize-item': {
+				await resizeItem({
+					itemId: String(formData.get('itemId') ?? ''),
+					userId: user.id,
+					scale: Number.parseFloat(String(formData.get('scale'))),
 				});
 				return { ok: true };
 			}
@@ -119,6 +141,16 @@ export async function action({ request, params }: Route.ActionArgs) {
 			}
 			case 'delete-item': {
 				await deleteItem({ itemId: String(formData.get('itemId') ?? ''), userId: user.id });
+				return { ok: true };
+			}
+			case 'delete-items': {
+				const ids = String(formData.get('itemIds') ?? '')
+					.split(',')
+					.filter(Boolean)
+					.slice(0, 50);
+				for (const itemId of ids) {
+					await deleteItem({ itemId, userId: user.id });
+				}
 				return { ok: true };
 			}
 			default:
@@ -158,7 +190,10 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<div className="flex h-svh flex-col">
-			<AppHeader userName={user.name}>
+			<AppHeader
+				user={user}
+				menuLinks={[{ label: 'Space settings', to: `/spaces/${space.id}/settings` }]}
+			>
 				<div className="flex min-w-0 items-center gap-3">
 					<span className="text-2xl" aria-hidden>
 						{space.emoji}
@@ -169,7 +204,6 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 							Today · {formatDay(board.date)}
 						</div>
 					</div>
-					<AvatarStack people={members} className="hidden sm:flex" />
 					<Button size="sm" onClick={() => setInviting(true)}>
 						Invite
 					</Button>
@@ -178,13 +212,6 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						className="rounded-lg px-2 py-1.5 text-sm text-ink-soft transition hover:bg-paper-deep hover:text-ink"
 					>
 						Timeline
-					</Link>
-					<Link
-						to={`/spaces/${space.id}/settings`}
-						aria-label="Space settings"
-						className="rounded-lg p-1.5 text-ink-soft transition hover:bg-paper-deep hover:text-ink"
-					>
-						⚙︎
 					</Link>
 				</div>
 			</AppHeader>
@@ -195,6 +222,13 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						items={board.items}
 						currentUserId={user.id}
 						frozen={false}
+						composer={<Composer />}
+						onDelete={(itemIds) =>
+							moveFetcher.submit(
+								{ intent: 'delete-items', itemIds: itemIds.join(',') },
+								{ method: 'post' },
+							)
+						}
 						onDraggingChange={(value) => {
 							dragging.current = value;
 						}}
@@ -204,13 +238,22 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 								{ method: 'post' },
 							)
 						}
+						onResize={(itemId, scale) =>
+							moveFetcher.submit(
+								{ intent: 'resize-item', itemId, scale: String(scale) },
+								{ method: 'post' },
+							)
+						}
 					/>
 				) : (
 					<div className="grid h-full place-items-center text-ink-faint">
-						<span className="animate-shimmer font-hand text-2xl">setting the table…</span>
+						<span className="animate-shimmer font-serif text-2xl italic">setting the table…</span>
 					</div>
 				)}
-				<Composer />
+				{/* The people at the table, tucked under the account corner */}
+				<div className="pointer-events-none absolute top-3 right-4 z-10 hidden sm:block">
+					<AvatarStack people={members} />
+				</div>
 			</main>
 
 			<InviteDialog open={inviting} onClose={() => setInviting(false)} />

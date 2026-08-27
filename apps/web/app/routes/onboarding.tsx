@@ -44,11 +44,11 @@ export default function Onboarding({ loaderData, actionData }: Route.ComponentPr
 
 	return (
 		<div className="min-h-svh">
-			<AppHeader userName={loaderData.user.name} />
+			<AppHeader user={loaderData.user} />
 			<main className="mx-auto flex max-w-md flex-col gap-6 p-6 pt-10">
 				<div className="animate-pop-in text-center">
 					<div className="text-5xl">🎨</div>
-					<h1 className="mt-3 font-hand text-3xl">Name your first canvas</h1>
+					<h1 className="mt-3 font-serif text-3xl">Name your first canvas</h1>
 					<p className="mt-2 text-sm text-ink-soft">
 						This is the board you'll share — a little corner for links, notes, photos and stickers.
 						You can invite someone the moment it exists.

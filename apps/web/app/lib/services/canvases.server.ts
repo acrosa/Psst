@@ -68,13 +68,14 @@ export type BoardAsset = {
 
 export type BoardItem = {
 	id: string;
-	type: 'link' | 'note' | 'image' | 'emoji';
+	type: 'link' | 'note' | 'image' | 'emoji' | 'drawing';
 	url: string | null;
 	text: string | null;
 	x: number;
 	y: number;
 	z: number;
 	rotation: number;
+	scale: number;
 	authorId: string;
 	authorName: string | null;
 	createdAt: string;
@@ -142,6 +143,7 @@ export async function getBoardItems(canvasId: string, assetUrl: (key: string) =>
 			y: item.y,
 			z: item.z,
 			rotation: item.rotation,
+			scale: item.scale,
 			authorId: item.authorId,
 			authorName,
 			createdAt: item.createdAt.toISOString(),

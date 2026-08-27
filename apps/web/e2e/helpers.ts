@@ -34,7 +34,7 @@ export async function registerUser(page: Page, user?: TestUser): Promise<TestUse
 	await page.getByRole('button', { name: /create account/i }).click();
 
 	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
-	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+	await expect(page.getByRole('button', { name: /account menu/i })).toBeVisible();
 
 	return testUser;
 }
@@ -72,5 +72,5 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 	await page.getByRole('button', { name: /^sign in$/i }).click();
 
 	await page.waitForURL(/\/(spaces|onboarding)$/);
-	await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+	await expect(page.getByRole('button', { name: /account menu/i })).toBeVisible();
 }

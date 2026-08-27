@@ -12,6 +12,14 @@ export const ITEM_SIZES = {
 
 export type BoardItemType = keyof typeof ITEM_SIZES;
 
+/** Option-drag resize bounds — cards can breathe, not take over (or vanish). */
+export const SCALE_MIN = 0.6;
+export const SCALE_MAX = 1.75;
+
+export function clampScale(scale: number): number {
+	return Math.min(SCALE_MAX, Math.max(SCALE_MIN, scale));
+}
+
 /** Reactions stay a small, warm set — not a full emoji keyboard. */
 export const REACTION_EMOJIS = ['🫶', '😂', '🥹', '😮', '🔥', '👀'] as const;
 

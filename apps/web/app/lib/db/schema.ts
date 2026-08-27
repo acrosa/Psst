@@ -149,13 +149,14 @@ export const items = pgTable(
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
-		type: text('type', { enum: ['link', 'note', 'image', 'emoji'] }).notNull(),
+		type: text('type', { enum: ['link', 'note', 'image', 'emoji', 'drawing'] }).notNull(),
 		url: text('url'),
 		text: text('text'),
 		x: real('x').notNull().default(0),
 		y: real('y').notNull().default(0),
 		z: integer('z').notNull().default(0),
 		rotation: real('rotation').notNull().default(0),
+		scale: real('scale').notNull().default(1),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		deletedAt: timestamp('deleted_at'),
 	},

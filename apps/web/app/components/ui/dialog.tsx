@@ -43,7 +43,7 @@ export function Dialog({
 			)}
 		>
 			<div className="animate-pop-in p-5">
-				{title ? <h2 className="mb-4 font-hand text-2xl">{title}</h2> : null}
+				{title ? <h2 className="mb-4 font-serif text-2xl">{title}</h2> : null}
 				{children}
 			</div>
 		</dialog>

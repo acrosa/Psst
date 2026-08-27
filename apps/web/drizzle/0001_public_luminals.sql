@@ -1,0 +1,1 @@
+ALTER TABLE "items" ADD COLUMN "scale" real DEFAULT 1 NOT NULL;

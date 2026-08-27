@@ -87,7 +87,7 @@ export default function InvitePage({ loaderData, actionData }: Route.ComponentPr
 		return (
 			<InviteShell>
 				<div className="text-5xl">🫥</div>
-				<h1 className="mt-4 font-hand text-3xl">{sad?.title ?? fallback.title}</h1>
+				<h1 className="mt-4 font-serif text-3xl">{sad?.title ?? fallback.title}</h1>
 				<p className="mt-2 text-sm text-ink-soft">{sad?.detail ?? fallback.detail}</p>
 				<Link
 					to="/"
@@ -109,7 +109,7 @@ export default function InvitePage({ loaderData, actionData }: Route.ComponentPr
 	return (
 		<InviteShell>
 			<div className="text-6xl">{invite.spaceEmoji}</div>
-			<h1 className="mt-4 font-hand text-3xl leading-tight">
+			<h1 className="mt-4 font-serif text-3xl leading-tight">
 				{invite.inviterName ?? 'Someone'} saved you a spot
 			</h1>
 			<p className="mt-2 text-ink-soft">

@@ -5,11 +5,21 @@ import {
 	type NodeChange,
 	type NodeTypes,
 	ReactFlow,
+	ReactFlowProvider,
 	applyNodeChanges,
 } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import type { BoardItem } from '~/lib/services/canvases.server';
-import { type BoardNodeData, PostcardNode, PrintNode, SlipNode, StickerNode } from './nodes';
+import { DropPasteLayer } from './drop-paste';
+import {
+	type BoardNodeData,
+	DrawingNode,
+	PostcardNode,
+	PrintNode,
+	SlipNode,
+	StickerNode,
+} from './nodes';
 import '@xyflow/react/dist/style.css';
 
 const nodeTypes: NodeTypes = {
@@ -17,6 +27,7 @@ const nodeTypes: NodeTypes = {
 	note: SlipNode,
 	emoji: StickerNode,
 	image: PrintNode,
+	drawing: DrawingNode,
 };
 
 export type BoardProps = {
@@ -24,7 +35,11 @@ export type BoardProps = {
 	currentUserId: string;
 	frozen: boolean;
 	onMove?: (itemId: string, x: number, y: number) => void;
+	onResize?: (itemId: string, scale: number) => void;
+	onDelete?: (itemIds: string[]) => void;
 	onDraggingChange?: (dragging: boolean) => void;
+	/** The composer bar — rendered inside the flow provider so it can place items in view. */
+	composer?: React.ReactNode;
 };
 
 type BoardNode = Node<BoardNodeData>;
@@ -35,9 +50,19 @@ type BoardNode = Node<BoardNodeData>;
  * eventually (last-write-wins); the node being dragged and freshly dropped
  * positions are kept locally until the server catches up via polling.
  */
-export function Board({ items, currentUserId, frozen, onMove, onDraggingChange }: BoardProps) {
+export function Board({
+	items,
+	currentUserId,
+	frozen,
+	onMove,
+	onResize,
+	onDelete,
+	onDraggingChange,
+	composer,
+}: BoardProps) {
 	const draggingId = useRef<string | null>(null);
 	const localPos = useRef(new Map<string, { x: number; y: number }>());
+	const [deleting, setDeleting] = useState<string[]>([]);
 
 	const toNode = (item: BoardItem): BoardNode => ({
 		id: item.id,
@@ -45,7 +70,7 @@ export function Board({ items, currentUserId, frozen, onMove, onDraggingChange }
 		position: { x: item.x, y: item.y },
 		zIndex: item.z,
 		draggable: !frozen,
-		data: { item, currentUserId, frozen },
+		data: { item, currentUserId, frozen, onResize },
 	});
 
 	const [nodes, setNodes] = useState<BoardNode[]>(() => items.map(toNode));
@@ -76,48 +101,91 @@ export function Board({ items, currentUserId, frozen, onMove, onDraggingChange }
 		});
 	}, [items, currentUserId, frozen]);
 
+	// Delete/Backspace takes the selected cards you authored off the board.
+	useEffect(() => {
+		if (frozen || !onDelete) return;
+		function onKeyDown(event: KeyboardEvent) {
+			if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+			const target = event.target;
+			if (
+				target instanceof Element &&
+				target.closest('input, textarea, [contenteditable="true"], [contenteditable=""]')
+			) {
+				return;
+			}
+			const own = nodes
+				.filter((node) => node.selected && node.data.item.authorId === currentUserId)
+				.map((node) => node.id);
+			if (own.length > 0) {
+				event.preventDefault();
+				setDeleting(own);
+			}
+		}
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [frozen, onDelete, nodes, currentUserId]);
+
 	return (
-		<div className="psst-board h-full w-full">
-			<ReactFlow
-				nodes={nodes}
-				onNodesChange={(changes: NodeChange<BoardNode>[]) =>
-					setNodes((prev) => applyNodeChanges(changes, prev))
+		<div className="psst-board relative h-full w-full">
+			<ReactFlowProvider>
+				<ReactFlow
+					nodes={nodes}
+					onNodesChange={(changes: NodeChange<BoardNode>[]) =>
+						setNodes((prev) => applyNodeChanges(changes, prev))
+					}
+					nodeTypes={nodeTypes}
+					nodesConnectable={false}
+					nodesDraggable={!frozen}
+					nodeDragThreshold={4}
+					panOnDrag
+					zoomOnScroll
+					minZoom={0.35}
+					maxZoom={1.75}
+					fitView
+					fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
+					deleteKeyCode={null}
+					onNodeDragStart={(_event, node) => {
+						draggingId.current = node.id;
+						onDraggingChange?.(true);
+					}}
+					onNodeDragStop={(_event, node) => {
+						draggingId.current = null;
+						onDraggingChange?.(false);
+						localPos.current.set(node.id, { ...node.position });
+						onMove?.(node.id, node.position.x, node.position.y);
+					}}
+				>
+					<Background
+						variant={BackgroundVariant.Dots}
+						gap={30}
+						size={1.5}
+						color="var(--color-line)"
+					/>
+				</ReactFlow>
+				{!frozen ? <DropPasteLayer /> : null}
+				{composer}
+			</ReactFlowProvider>
+
+			<ConfirmDialog
+				open={deleting.length > 0}
+				onClose={() => setDeleting([])}
+				onConfirm={() => onDelete?.(deleting)}
+				title={
+					deleting.length === 1
+						? 'Take this off the board?'
+						: `Take ${deleting.length} off the board?`
 				}
-				nodeTypes={nodeTypes}
-				nodesConnectable={false}
-				nodesDraggable={!frozen}
-				nodeDragThreshold={4}
-				panOnDrag
-				zoomOnScroll
-				minZoom={0.35}
-				maxZoom={1.75}
-				fitView
-				fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
-				deleteKeyCode={null}
-				onNodeDragStart={(_event, node) => {
-					draggingId.current = node.id;
-					onDraggingChange?.(true);
-				}}
-				onNodeDragStop={(_event, node) => {
-					draggingId.current = null;
-					onDraggingChange?.(false);
-					localPos.current.set(node.id, { ...node.position });
-					onMove?.(node.id, node.position.x, node.position.y);
-				}}
-			>
-				<Background
-					variant={BackgroundVariant.Dots}
-					gap={30}
-					size={1.5}
-					color="var(--color-line)"
-				/>
-			</ReactFlow>
+				message="It leaves the canvas for everyone — quietly, no trace."
+				confirmLabel="Take it off"
+			/>
 
 			{items.length === 0 ? (
 				<div className="pointer-events-none absolute inset-0 grid place-items-center">
 					<div className="text-center">
 						<div className="text-5xl">🕊️</div>
-						<p className="mt-3 font-hand text-2xl text-ink-soft">psst — drop something here</p>
+						<p className="mt-3 font-serif text-2xl text-ink-soft italic">
+							psst — drop something here
+						</p>
 						{!frozen ? (
 							<p className="mt-1 text-sm text-ink-faint">
 								a link, a note, a sticker… anything you'd whisper

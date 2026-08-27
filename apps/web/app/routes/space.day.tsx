@@ -39,7 +39,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	const items = await getBoardItems(canvas.id, publicUrl);
 
 	return {
-		user: { id: user.id, name: user.name ?? null },
+		user: { id: user.id, name: user.name ?? null, image: user.image ?? null },
 		space: { id: space.id, name: space.name, emoji: space.emoji },
 		day: { date: canvas.date, items },
 	};
@@ -53,7 +53,7 @@ export default function SpaceDay({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<div className="flex h-svh flex-col">
-			<AppHeader userName={user.name}>
+			<AppHeader user={user}>
 				<div className="flex min-w-0 items-center gap-3">
 					<Link
 						to={`/spaces/${space.id}/days`}
@@ -76,7 +76,7 @@ export default function SpaceDay({ loaderData }: Route.ComponentProps) {
 					<Board items={day.items} currentUserId={user.id} frozen />
 				) : (
 					<div className="grid h-full place-items-center text-ink-faint">
-						<span className="animate-shimmer font-hand text-2xl">turning the page…</span>
+						<span className="animate-shimmer font-serif text-2xl italic">turning the page…</span>
 					</div>
 				)}
 			</main>

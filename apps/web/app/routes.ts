@@ -18,9 +18,11 @@ export default [
 
 	// API
 	route('api/auth/*', 'routes/api.auth.$.ts'),
+	route('api/avatar', 'routes/api.avatar.ts'),
 	route('health', 'routes/health.ts'),
 	route('files/*', 'routes/files.$.ts'),
 
 	// Dev/test-only OpenGraph fixture for exercising the unfurl pipeline locally
 	route('e2e/og-fixture', 'routes/e2e.og-fixture.ts'),
+	route('design', 'routes/design.tsx'),
 ] satisfies RouteConfig;

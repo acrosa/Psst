@@ -22,7 +22,7 @@ export default function Home() {
 		<main className="flex min-h-svh flex-col items-center justify-center gap-8 p-6 text-center">
 			<div className="animate-pop-in flex flex-col items-center gap-5">
 				<div className="text-6xl">🤫</div>
-				<h1 className="font-hand text-3xl sm:text-4xl">psst… look at this</h1>
+				<h1 className="font-serif text-3xl sm:text-4xl">psst… look at this</h1>
 				<p className="max-w-md text-lg text-ink-soft">
 					A little shared canvas for you and someone close. Drop links, notes, photos and stickers
 					on today&apos;s board — tomorrow it becomes a page in your scrapbook.

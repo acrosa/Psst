@@ -8,6 +8,13 @@
       "when": 1787085914987,
       "tag": "0000_high_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787790642855,
+      "tag": "0001_public_luminals",
+      "breakpoints": true
     }
   ]
 }

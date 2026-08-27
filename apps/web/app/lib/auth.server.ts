@@ -20,15 +20,27 @@ export const auth = betterAuth({
 		requireEmailVerification: false,
 	},
 
-	socialProviders:
-		env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+	socialProviders: {
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
 			? {
 					google: {
 						clientId: env.GOOGLE_CLIENT_ID,
 						clientSecret: env.GOOGLE_CLIENT_SECRET,
 					},
 				}
-			: undefined,
+			: {}),
+		...(env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET
+			? {
+					apple: {
+						clientId: env.APPLE_CLIENT_ID,
+						clientSecret: env.APPLE_CLIENT_SECRET,
+					},
+				}
+			: {}),
+	},
+
+	// Apple's OAuth flow posts back from appleid.apple.com.
+	trustedOrigins: ['https://appleid.apple.com'],
 
 	session: {
 		expiresIn: 60 * 60 * 24 * 30, // 30 days — this is an ambient place, stay signed in
@@ -65,6 +77,10 @@ export async function requireUser(request: Request): Promise<SessionUser> {
 	return user;
 }
 
-export function isGoogleEnabled(): boolean {
-	return Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+/** Which social providers are configured — drives the sign-in buttons. */
+export function enabledProviders() {
+	return {
+		google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+		apple: Boolean(env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET),
+	};
 }

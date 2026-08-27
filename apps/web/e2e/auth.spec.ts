@@ -8,7 +8,7 @@ test.describe('auth', () => {
 		await expect(page).toHaveURL(/\/spaces\/[0-9a-f-]{36}$/);
 		await expect(page.getByRole('banner').getByText(/'s corner/)).toBeVisible();
 		await expect(page.getByText(/drop something here/i)).toBeVisible();
-		await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+		await expect(page.getByRole('button', { name: /account menu/i })).toBeVisible();
 
 		// Header shows who's signed in (desktop viewport)
 		await expect(page.getByText(user.name)).toBeVisible();
@@ -18,6 +18,7 @@ test.describe('auth', () => {
 		const user = await registerUser(page);
 
 		// Sign out, then try to register the same email again
+		await page.getByRole('button', { name: /account menu/i }).click();
 		await page.getByRole('button', { name: /sign out/i }).click();
 		await page.waitForURL('**/');
 
@@ -34,6 +35,7 @@ test.describe('auth', () => {
 	test('signs in and out', async ({ page }) => {
 		const user = await registerUser(page);
 
+		await page.getByRole('button', { name: /account menu/i }).click();
 		await page.getByRole('button', { name: /sign out/i }).click();
 		await page.waitForURL('**/');
 		await expect(page.getByRole('link', { name: /start a canvas/i })).toBeVisible();
@@ -44,6 +46,7 @@ test.describe('auth', () => {
 
 	test('rejects a wrong password', async ({ page }) => {
 		const user = await registerUser(page);
+		await page.getByRole('button', { name: /account menu/i }).click();
 		await page.getByRole('button', { name: /sign out/i }).click();
 		await page.waitForURL('**/');
 

@@ -1,12 +1,12 @@
 import { Form, Link, redirect, useNavigation, useSearchParams } from 'react-router';
 import { AuthCard } from '~/components/auth-card';
-import { GoogleButton } from '~/components/google-button';
+import { AuthDivider, SocialButtons } from '~/components/social-buttons';
 import { TimezoneInput } from '~/components/timezone-input';
 import { Button } from '~/components/ui/button';
 import { FormError } from '~/components/ui/field-error';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { auth, getUser, isGoogleEnabled } from '~/lib/auth.server';
+import { auth, enabledProviders, getUser } from '~/lib/auth.server';
 import { track } from '~/lib/metrics.server';
 import { safeNext } from '~/lib/redirects';
 import { createSpace } from '~/lib/services/spaces.server';
@@ -21,7 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	if (user) {
 		throw redirect(safeNext(new URL(request.url).searchParams.get('next')));
 	}
-	return { googleEnabled: isGoogleEnabled() };
+	return { providers: enabledProviders() };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -110,7 +110,12 @@ export default function Register({ loaderData, actionData }: Route.ComponentProp
 				</>
 			}
 		>
-			<Form method="post" className="grid gap-4">
+			<div className="grid gap-4">
+				<SocialButtons providers={loaderData.providers} next={safeNext(next)} />
+				{loaderData.providers.google || loaderData.providers.apple ? <AuthDivider /> : null}
+			</div>
+
+			<Form method="post" className="mt-4 grid gap-4">
 				<FormError error={actionData?.error} />
 				<TimezoneInput />
 
@@ -148,8 +153,6 @@ export default function Register({ loaderData, actionData }: Route.ComponentProp
 				<Button type="submit" disabled={isSubmitting} className="w-full">
 					{isSubmitting ? 'Creating…' : 'Create account'}
 				</Button>
-
-				{loaderData.googleEnabled ? <GoogleButton next={safeNext(next)} /> : null}
 			</Form>
 		</AuthCard>
 	);

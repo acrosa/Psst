@@ -33,7 +33,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		listPendingInvites(space.id),
 	]);
 	return {
-		user: { id: user.id, name: user.name ?? null },
+		user: { id: user.id, name: user.name ?? null, image: user.image ?? null },
 		role: membership.role,
 		space: { id: space.id, name: space.name, emoji: space.emoji, timezone: space.timezone },
 		members,
@@ -86,7 +86,7 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 
 	return (
 		<div className="min-h-svh">
-			<AppHeader userName={user.name}>
+			<AppHeader user={user}>
 				<Link
 					to={`/spaces/${space.id}`}
 					className="text-sm text-ink-soft transition hover:text-ink"
@@ -95,8 +95,8 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 				</Link>
 			</AppHeader>
 
-			<main className="mx-auto grid max-w-xl gap-8 p-6">
-				<h1 className="font-hand text-3xl">Space settings</h1>
+			<main className="mx-auto grid max-w-xl gap-6 px-6 py-10">
+				<h1 className="font-serif text-3xl">Space settings</h1>
 
 				{actionData && 'error' in actionData && actionData.error ? (
 					<p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent-deep">
@@ -105,8 +105,10 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 				) : null}
 
 				{isOwner ? (
-					<section className="grid gap-4 rounded-xl border border-line bg-card p-5 shadow-card">
-						<h2 className="font-medium">Look &amp; feel</h2>
+					<section className="grid gap-5 rounded-xl border border-line bg-card p-6 shadow-card">
+						<h2 className="font-mono font-semibold text-[11px] text-ink-soft uppercase tracking-wider">
+							Look &amp; feel
+						</h2>
 						<Form method="post" className="grid gap-4">
 							<input type="hidden" name="intent" value="rename" />
 							<div className="grid gap-1.5">
@@ -130,8 +132,10 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 					</section>
 				) : null}
 
-				<section className="grid gap-3 rounded-xl border border-line bg-card p-5 shadow-card">
-					<h2 className="font-medium">Members</h2>
+				<section className="grid gap-4 rounded-xl border border-line bg-card p-6 shadow-card">
+					<h2 className="font-mono font-semibold text-[11px] text-ink-soft uppercase tracking-wider">
+						Members
+					</h2>
 					<ul className="grid gap-2">
 						{members.map((member) => (
 							<li key={member.id} className="flex items-center gap-3">
@@ -144,8 +148,10 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 				</section>
 
 				{invites.length > 0 ? (
-					<section className="grid gap-3 rounded-xl border border-line bg-card p-5 shadow-card">
-						<h2 className="font-medium">Open invites</h2>
+					<section className="grid gap-4 rounded-xl border border-line bg-card p-6 shadow-card">
+						<h2 className="font-mono font-semibold text-[11px] text-ink-soft uppercase tracking-wider">
+							Open invites
+						</h2>
 						<ul className="grid gap-2">
 							{invites.map((invite) => (
 								<li key={invite.id} className="flex items-center gap-3 text-sm">
@@ -165,8 +171,10 @@ export default function SpaceSettings({ loaderData, actionData }: Route.Componen
 					</section>
 				) : null}
 
-				<section className="grid gap-3 rounded-xl border border-line bg-card p-5 shadow-card">
-					<h2 className="font-medium">Leaving</h2>
+				<section className="grid gap-4 rounded-xl border border-line bg-card p-6 shadow-card">
+					<h2 className="font-mono font-semibold text-[11px] text-ink-soft uppercase tracking-wider">
+						Leaving
+					</h2>
 					{isOwner ? (
 						<p className="text-sm text-ink-soft">
 							You made this place — owners can't leave it (yet).

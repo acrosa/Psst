@@ -11,7 +11,7 @@ test.describe('image items', () => {
 		await registerOntoCanvas(page);
 
 		await page
-			.locator('input[type="file"]')
+			.getByLabel('Photo file')
 			.setInputFiles({ name: 'tiny.png', mimeType: 'image/png', buffer: TINY_PNG });
 
 		const photo = page.locator('.react-flow__node img');
@@ -36,7 +36,7 @@ test.describe('image items', () => {
 	test('non-image files are turned away kindly', async ({ page }) => {
 		await registerOntoCanvas(page);
 
-		await page.locator('input[type="file"]').setInputFiles({
+		await page.getByLabel('Photo file').setInputFiles({
 			name: 'notes.txt',
 			mimeType: 'text/plain',
 			buffer: Buffer.from('not a photo'),
