@@ -200,22 +200,24 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 				user={user}
 				menuLinks={[{ label: 'Space settings', to: `/spaces/${space.id}/settings` }]}
 			>
-				<div className="flex min-w-0 items-center gap-3">
-					<span className="text-2xl" aria-hidden>
+				<div className="flex min-w-0 items-center gap-2 sm:gap-3">
+					<span className="shrink-0 text-xl sm:text-2xl" aria-hidden>
 						{space.emoji}
 					</span>
 					<div className="min-w-0">
-						<div className="truncate font-medium leading-tight">{space.name}</div>
-						<div className="text-xs text-ink-faint leading-tight">
+						<div className="truncate font-medium text-sm leading-tight sm:text-base">
+							{space.name}
+						</div>
+						<div className="hidden truncate text-ink-faint text-xs leading-tight sm:block">
 							Today · {formatDay(board.date)}
 						</div>
 					</div>
-					<Button size="sm" onClick={() => setInviting(true)}>
+					<Button size="sm" className="shrink-0" onClick={() => setInviting(true)}>
 						Invite
 					</Button>
 					<Link
 						to={`/spaces/${space.id}/days`}
-						className="rounded-lg px-2 py-1.5 text-sm text-ink-soft transition hover:bg-paper-deep hover:text-ink"
+						className="shrink-0 rounded-lg px-1.5 py-1.5 text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink sm:px-2"
 					>
 						Timeline
 					</Link>
