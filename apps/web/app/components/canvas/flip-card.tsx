@@ -44,6 +44,7 @@ export function FlipCard({
 	scale = 1,
 	onResize,
 	flippable = true,
+	onLike,
 }: {
 	width: number;
 	height: number;
@@ -60,8 +61,12 @@ export function FlipCard({
 	onResize?: (scale: number) => void;
 	/** Stickers don't flip — no back, no click-to-turn. */
 	flippable?: boolean;
+	/** Double-tap on the front toggles a 🫶 (with a burst). */
+	onLike?: () => void;
 }) {
 	const downRef = useRef<{ x: number; y: number } | null>(null);
+	const clickTimer = useRef<number | null>(null);
+	const [burst, setBurst] = useState(0);
 	const altHeld = useAltHeld();
 	const [dragScale, setDragScale] = useState<number | null>(null);
 	// Keeps the dropped size until the server round-trips it back to us.
@@ -116,8 +121,23 @@ export function FlipCard({
 				const target = event.target as HTMLElement;
 				if (target.closest('input, textarea, button, a, [data-noflip]')) return;
 				const down = downRef.current;
-				if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < 6) {
+				if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return;
+				// From the back, flip home instantly. On the front, wait a beat to
+				// tell a flip (single tap) from a like (double tap).
+				if (flipped || !onLike) {
 					onToggle();
+					return;
+				}
+				if (clickTimer.current) {
+					window.clearTimeout(clickTimer.current);
+					clickTimer.current = null;
+					setBurst((count) => count + 1);
+					onLike();
+				} else {
+					clickTimer.current = window.setTimeout(() => {
+						clickTimer.current = null;
+						onToggle();
+					}, 250);
 				}
 			}}
 		>
@@ -135,6 +155,12 @@ export function FlipCard({
 					</div>
 				) : null}
 			</div>
+
+			{burst > 0 ? (
+				<span key={burst} className="like-burst" aria-hidden>
+					🫶
+				</span>
+			) : null}
 
 			{onResize && altHeld ? (
 				<button

@@ -37,6 +37,7 @@ export type BoardProps = {
 	onMove?: (itemId: string, x: number, y: number) => void;
 	onResize?: (itemId: string, scale: number) => void;
 	onDelete?: (itemIds: string[]) => void;
+	onLike?: (itemId: string) => void;
 	onDraggingChange?: (dragging: boolean) => void;
 	/** The composer bar — rendered inside the flow provider so it can place items in view. */
 	composer?: React.ReactNode;
@@ -57,6 +58,7 @@ export function Board({
 	onMove,
 	onResize,
 	onDelete,
+	onLike,
 	onDraggingChange,
 	composer,
 }: BoardProps) {
@@ -70,7 +72,7 @@ export function Board({
 		position: { x: item.x, y: item.y },
 		zIndex: item.z,
 		draggable: !frozen,
-		data: { item, currentUserId, frozen, onResize },
+		data: { item, currentUserId, frozen, onResize, onLike },
 	});
 
 	const [nodes, setNodes] = useState<BoardNode[]>(() => items.map(toNode));

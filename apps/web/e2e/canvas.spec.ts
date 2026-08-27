@@ -160,6 +160,19 @@ test.describe('the daily canvas', () => {
 		await expect(visit).toHaveAttribute('target', '_blank');
 	});
 
+	test('double-tap likes a card', async ({ page }) => {
+		await registerOntoCanvas(page);
+		await dropNote(page, 'double tap me');
+
+		const node = nodeFor(page, 'double tap me');
+		await node.dblclick();
+
+		// The caption row wears the heart (and the card did not flip).
+		await expect(node.getByRole('button', { name: /flip to write on the back/i })).toContainText(
+			'🫶',
+		);
+	});
+
 	test('emoji stickers drop from the tray', async ({ page }) => {
 		await registerOntoCanvas(page);
 

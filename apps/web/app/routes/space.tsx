@@ -223,6 +223,12 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						currentUserId={user.id}
 						frozen={false}
 						composer={<Composer />}
+						onLike={(itemId) =>
+							moveFetcher.submit(
+								{ intent: 'toggle-reaction', itemId, emoji: '🫶' },
+								{ method: 'post' },
+							)
+						}
 						onDelete={(itemIds) =>
 							moveFetcher.submit(
 								{ intent: 'delete-items', itemIds: itemIds.join(',') },

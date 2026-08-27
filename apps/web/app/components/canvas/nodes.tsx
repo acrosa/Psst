@@ -15,6 +15,7 @@ export type BoardNodeData = {
 	currentUserId: string;
 	frozen: boolean;
 	onResize?: (itemId: string, scale: number) => void;
+	onLike?: (itemId: string) => void;
 };
 
 type BoardNodeProps = NodeProps & { data: BoardNodeData };
@@ -97,6 +98,7 @@ export function PostcardNode({ data }: BoardNodeProps) {
 			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={front}
 			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
@@ -119,6 +121,7 @@ export function SlipNode({ data }: BoardNodeProps) {
 			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div
@@ -378,6 +381,7 @@ export function PrintNode({ data }: BoardNodeProps) {
 			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2.5 pb-8 shadow-card">
