@@ -21,6 +21,8 @@ const schema = z.object({
 	GOOGLE_CLIENT_SECRET: z.string().optional(),
 	APPLE_CLIENT_ID: z.string().optional(),
 	APPLE_CLIENT_SECRET: z.string().optional(),
+	// Comma-separated origins allowed to hit auth (e.g. a tailnet URL in dev)
+	EXTRA_TRUSTED_ORIGINS: z.string().optional(),
 
 	// Jobs: inline (default, no worker needed) or queue (pg-boss + `pnpm worker`)
 	JOBS_MODE: z.enum(['inline', 'queue']).default('inline'),

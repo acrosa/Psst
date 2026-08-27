@@ -11,6 +11,10 @@ export default defineConfig({
 		// makes a collision fail fast instead of silently drifting to another port.
 		port: Number(process.env.PORT) || 3000,
 		strictPort: Boolean(process.env.PORT),
+		// Reachable over the tailnet (iPad → this machine). Vite blocks foreign
+		// Host headers by default; allow MagicDNS names.
+		host: true,
+		allowedHosts: ['.ts.net'],
 		// Pre-transform the board's dependency graph (@xyflow/react is the heavy
 		// one) so first paint of a canvas isn't a cold-compile stall.
 		warmup: {

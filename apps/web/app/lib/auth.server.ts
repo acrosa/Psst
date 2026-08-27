@@ -39,8 +39,14 @@ export const auth = betterAuth({
 			: {}),
 	},
 
-	// Apple's OAuth flow posts back from appleid.apple.com.
-	trustedOrigins: ['https://appleid.apple.com'],
+	// Apple's OAuth flow posts back from appleid.apple.com; EXTRA_TRUSTED_ORIGINS
+	// adds e.g. the tailnet address so other devices can sign in against dev.
+	trustedOrigins: [
+		'https://appleid.apple.com',
+		...(env.EXTRA_TRUSTED_ORIGINS?.split(',')
+			.map((origin) => origin.trim())
+			.filter(Boolean) ?? []),
+	],
 
 	session: {
 		expiresIn: 60 * 60 * 24 * 30, // 30 days — this is an ambient place, stay signed in
