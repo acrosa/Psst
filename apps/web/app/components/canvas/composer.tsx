@@ -1,7 +1,15 @@
 import { useReactFlow } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ImageIcon, MicIcon, PencilIcon, SmileIcon, SpinnerIcon, XIcon } from '~/components/icons';
+import {
+	ImageIcon,
+	MicIcon,
+	PencilIcon,
+	PlusIcon,
+	SmileIcon,
+	SpinnerIcon,
+	XIcon,
+} from '~/components/icons';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, STICKER_EMOJIS } from '~/lib/design';
@@ -27,6 +35,7 @@ export function Composer() {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [trayOpen, setTrayOpen] = useState(false);
+	const [plusOpen, setPlusOpen] = useState(false);
 	const [drawing, setDrawing] = useState(false);
 	const [color, setColor] = useState(PENCIL_COLORS[0]);
 	const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -238,7 +247,7 @@ export function Composer() {
 		<>
 			{drawing ? <DrawLayer color={color} strokes={strokes} onStroke={addStroke} /> : null}
 
-			<div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center px-5 sm:bottom-6 sm:px-6">
+			<div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-5 sm:bottom-5 sm:px-6">
 				<div className="pointer-events-auto w-full max-w-2xl">
 					{fetcher.data?.error ||
 					photoFetcher.data?.error ||
@@ -250,6 +259,56 @@ export function Composer() {
 								audioFetcher.data?.error ??
 								micError}
 						</p>
+					) : null}
+
+					{plusOpen && !drawing && !recording ? (
+						<div className="mb-2.5 flex items-center gap-1 rounded-full border border-line bg-card p-1.5 shadow-lift sm:hidden">
+							<button
+								type="button"
+								aria-label="Sticker tray"
+								onClick={() => {
+									setPlusOpen(false);
+									setTrayOpen(true);
+								}}
+								className={iconButton}
+							>
+								<SmileIcon className="h-[18px] w-[18px]" />
+							</button>
+							<button
+								type="button"
+								aria-label="Add a photo"
+								disabled={uploading}
+								onClick={() => {
+									setPlusOpen(false);
+									fileRef.current?.click();
+								}}
+								className={iconButton}
+							>
+								<ImageIcon className="h-[18px] w-[18px]" />
+							</button>
+							<button
+								type="button"
+								aria-label="Draw on the board"
+								onClick={() => {
+									setPlusOpen(false);
+									setDrawing(true);
+								}}
+								className={iconButton}
+							>
+								<PencilIcon className="h-[18px] w-[18px]" />
+							</button>
+							<button
+								type="button"
+								aria-label="Record a voice note"
+								onClick={() => {
+									setPlusOpen(false);
+									void startRecording();
+								}}
+								className={iconButton}
+							>
+								<MicIcon className="h-[18px] w-[18px]" />
+							</button>
+						</div>
 					) : null}
 
 					{trayOpen && !drawing ? (
@@ -351,10 +410,19 @@ export function Composer() {
 						>
 							<button
 								type="button"
+								aria-label="Add to the board"
+								aria-expanded={plusOpen}
+								onClick={() => setPlusOpen((open) => !open)}
+								className={cn(iconButton, 'sm:hidden')}
+							>
+								<PlusIcon className={cn('h-5 w-5 transition-transform', plusOpen && 'rotate-45')} />
+							</button>
+							<button
+								type="button"
 								aria-label="Sticker tray"
 								aria-expanded={trayOpen}
 								onClick={() => setTrayOpen((open) => !open)}
-								className={iconButton}
+								className={cn(iconButton, 'hidden sm:grid')}
 							>
 								<SmileIcon className="h-[18px] w-[18px]" />
 							</button>
@@ -363,7 +431,7 @@ export function Composer() {
 								aria-label="Add a photo"
 								disabled={uploading}
 								onClick={() => fileRef.current?.click()}
-								className={iconButton}
+								className={cn(iconButton, 'hidden sm:grid')}
 							>
 								{uploading ? (
 									<SpinnerIcon className="h-[18px] w-[18px] animate-spin" />
@@ -378,7 +446,7 @@ export function Composer() {
 									setTrayOpen(false);
 									setDrawing(true);
 								}}
-								className={iconButton}
+								className={cn(iconButton, 'hidden sm:grid')}
 							>
 								<PencilIcon className="h-[18px] w-[18px]" />
 							</button>
@@ -389,7 +457,7 @@ export function Composer() {
 									setTrayOpen(false);
 									void startRecording();
 								}}
-								className={iconButton}
+								className={cn(iconButton, 'hidden sm:grid')}
 							>
 								{audioFetcher.state !== 'idle' ? (
 									<SpinnerIcon className="h-[18px] w-[18px] animate-spin" />

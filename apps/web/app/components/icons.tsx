@@ -17,6 +17,7 @@ export {
 	MessageCircle as ChatIcon,
 	Mic as MicIcon,
 	Pause as PauseIcon,
+	Plus as PlusIcon,
 	Play as PlayIcon,
 	CornerUpLeft as FlipBackIcon,
 	Settings2 as SettingsIcon,
