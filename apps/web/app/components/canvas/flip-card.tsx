@@ -80,6 +80,61 @@ export function FlipCard({
 
 	const liveScale = dragScale ?? pendingScale ?? scale;
 
+	// Touch has no Option key: pinching a card resizes it. Native non-passive
+	// listeners — they must fire before the pane's zoom/drag handlers, and
+	// React's delegated touch events are passive.
+	const rootRef = useRef<HTMLDivElement>(null);
+	const pinchRef = useRef<{ start: number; base: number; latest: number } | null>(null);
+	const latestRef = useRef({ scale, liveScale, onResize });
+	latestRef.current = { scale, liveScale, onResize };
+
+	useEffect(() => {
+		const el = rootRef.current;
+		if (!el) return;
+		const span = (touches: TouchList) =>
+			Math.hypot(
+				touches[0].clientX - touches[1].clientX,
+				touches[0].clientY - touches[1].clientY,
+			);
+		const start = (event: TouchEvent) => {
+			if (!latestRef.current.onResize || event.touches.length !== 2) return;
+			event.stopPropagation();
+			event.preventDefault();
+			const base = latestRef.current.liveScale;
+			pinchRef.current = { start: span(event.touches), base, latest: base };
+		};
+		const move = (event: TouchEvent) => {
+			if (!pinchRef.current || event.touches.length !== 2) return;
+			event.stopPropagation();
+			event.preventDefault();
+			const next = clampScale(
+				pinchRef.current.base * (span(event.touches) / pinchRef.current.start),
+			);
+			pinchRef.current.latest = next;
+			setDragScale(next);
+		};
+		const end = (event: TouchEvent) => {
+			if (!pinchRef.current || event.touches.length >= 2) return;
+			const { latest } = pinchRef.current;
+			pinchRef.current = null;
+			setDragScale(null);
+			if (Math.abs(latest - latestRef.current.scale) > 0.01) {
+				setPendingScale(latest);
+				latestRef.current.onResize?.(latest);
+			}
+		};
+		el.addEventListener('touchstart', start, { passive: false });
+		el.addEventListener('touchmove', move, { passive: false });
+		el.addEventListener('touchend', end);
+		el.addEventListener('touchcancel', end);
+		return () => {
+			el.removeEventListener('touchstart', start);
+			el.removeEventListener('touchmove', move);
+			el.removeEventListener('touchend', end);
+			el.removeEventListener('touchcancel', end);
+		};
+	}, []);
+
 	function startResize(event: React.PointerEvent<HTMLButtonElement>) {
 		if (!onResize) return;
 		event.preventDefault();
@@ -111,6 +166,7 @@ export function FlipCard({
 	return (
 		// biome-ignore lint/a11y/useKeyWithClickEvents: cards flip via the badge button beneath as well
 		<div
+			ref={rootRef}
 			className="group"
 			style={{ width: width * liveScale, height: height * liveScale, perspective: '1200px' }}
 			onPointerDown={(event) => {
