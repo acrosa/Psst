@@ -10,10 +10,8 @@ final class AppState {
 	/// Set when a push is tapped; the canvas navigates to this space.
 	var pendingSpaceId: String?
 
-	func signedIn(with session: PsstAPI.Session) {
-		SessionStore.bearerToken = session.bearer
-		SessionStore.sessionCookie = session.cookieValue
-		SessionStore.sessionCookieName = session.cookieName
+	func signedIn(with bearer: String) {
+		SessionStore.bearerToken = bearer
 		isSignedIn = true
 	}
 

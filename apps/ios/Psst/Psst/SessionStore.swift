@@ -1,8 +1,9 @@
 import Foundation
 import Security
 
-/// Bearer token + web session cookie in the keychain, shared with the widget
-/// through the App Group (app groups double as keychain access groups on iOS).
+/// Bearer token in the keychain, shared with the widget through the App Group
+/// (app groups double as keychain access groups on iOS). The token is also the
+/// better-auth session cookie value, so it signs the web canvas in too.
 enum SessionStore {
 	private static let service = "app.psst.session"
 
@@ -11,21 +12,11 @@ enum SessionStore {
 		set { write(account: "bearer", value: newValue) }
 	}
 
-	/// The better-auth session cookie value, for signing the WKWebView in.
-	static var sessionCookie: String? {
-		get { read(account: "cookie") }
-		set { write(account: "cookie", value: newValue) }
-	}
-
-	static var sessionCookieName: String? {
-		get { read(account: "cookieName") }
-		set { write(account: "cookieName", value: newValue) }
-	}
-
 	static func clear() {
 		bearerToken = nil
-		sessionCookie = nil
-		sessionCookieName = nil
+		// Legacy cookie entries from builds that stored them separately.
+		write(account: "cookie", value: nil)
+		write(account: "cookieName", value: nil)
 	}
 
 	private static func baseQuery(account: String) -> [String: Any] {
@@ -55,6 +46,12 @@ enum SessionStore {
 		var attributes = query
 		attributes[kSecValueData as String] = data
 		attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-		SecItemAdd(attributes as CFDictionary, nil)
+		let status = SecItemAdd(attributes as CFDictionary, nil)
+		if status != errSecSuccess {
+			// A silent failure here signs the user out on next launch — usually
+			// a missing app-group entitlement (errSecMissingEntitlement, -34018).
+			print("[keychain] write \(account) failed: \(status)")
+			assertionFailure("keychain write failed (\(status)) — check entitlements")
+		}
 	}
 }

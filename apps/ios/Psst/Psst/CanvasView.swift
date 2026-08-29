@@ -41,16 +41,17 @@ struct CanvasWebView: UIViewRepresentable {
 			webView.isInspectable = true
 		#endif
 
-		// Sign the webview in with the captured session cookie, then load.
+		// Sign the webview in: the bearer token is the session cookie value.
 		let base = Config.baseURL
 		let target = base.appending(path: "/spaces")
-		if let value = SessionStore.sessionCookie,
+		let secure = base.scheme == "https"
+		if let value = SessionStore.bearerToken,
 			let cookie = HTTPCookie(properties: [
-				.name: SessionStore.sessionCookieName ?? "__Secure-better-auth.session_token",
+				.name: secure ? "__Secure-better-auth.session_token" : "better-auth.session_token",
 				.value: value,
 				.domain: base.host() ?? "",
 				.path: "/",
-				.secure: "TRUE",
+				.secure: secure ? "TRUE" : "FALSE",
 			])
 		{
 			webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) {

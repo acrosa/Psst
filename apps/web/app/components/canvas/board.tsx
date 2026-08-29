@@ -143,6 +143,7 @@ export function Board({
 					nodeDragThreshold={4}
 					panOnDrag
 					zoomOnScroll
+					zoomOnDoubleClick={false}
 					minZoom={0.35}
 					maxZoom={1.75}
 					fitView

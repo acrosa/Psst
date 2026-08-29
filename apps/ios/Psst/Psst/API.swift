@@ -41,46 +41,41 @@ enum APIError: LocalizedError {
 	}
 }
 
-/// Thin client for the psst JSON surface. Sign-in captures both the bearer
-/// token (native requests) and the session cookie (for the web canvas).
+/// Thin client for the psst JSON surface. Sign-in captures the bearer token —
+/// it doubles as the session cookie value when signing the web canvas in.
 struct PsstAPI {
 	var baseURL: URL { Config.baseURL }
 
-	struct Session {
-		let bearer: String?
-		let cookieName: String?
-		let cookieValue: String?
-	}
-
 	// MARK: Auth
 
-	func signIn(email: String, password: String) async throws -> Session {
+	func signIn(email: String, password: String) async throws -> String {
 		try await authenticate(
 			path: "/api/auth/sign-in/email",
 			body: ["email": email, "password": password],
 		)
 	}
 
-	func signUp(name: String, email: String, password: String) async throws -> Session {
+	func signUp(name: String, email: String, password: String) async throws -> String {
 		try await authenticate(
 			path: "/api/auth/sign-up/email",
 			body: ["name": name, "email": email, "password": password],
 		)
 	}
 
-	func signInWithApple(idToken: String) async throws -> Session {
+	func signInWithApple(idToken: String) async throws -> String {
 		try await authenticate(
 			path: "/api/auth/sign-in/social",
 			body: ["provider": "apple", "idToken": ["token": idToken]],
 		)
 	}
 
-	private func authenticate(path: String, body: [String: Any]) async throws -> Session {
+	private func authenticate(path: String, body: [String: Any]) async throws -> String {
 		var request = URLRequest(url: baseURL.appending(path: path))
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-		// better-auth requires a trusted Origin on cookie-carrying POSTs, and
-		// URLSession attaches stored cookies but never sends Origin on its own.
+		// Native auth is bearer-only: keep the shared cookie jar out of it, or
+		// a stale session cookie trips better-auth's Origin/CSRF enforcement.
+		request.httpShouldHandleCookies = false
 		if let scheme = baseURL.scheme, let host = baseURL.host() {
 			request.setValue("\(scheme)://\(host)", forHTTPHeaderField: "Origin")
 		}
@@ -94,11 +89,10 @@ struct PsstAPI {
 			throw APIError.badResponse(http.statusCode, message)
 		}
 
-		let bearer = http.value(forHTTPHeaderField: "set-auth-token")
-		let headers = (http.allHeaderFields as? [String: String]) ?? [:]
-		let cookies = HTTPCookie.cookies(withResponseHeaderFields: headers, for: baseURL)
-		let session = cookies.first { $0.name.contains("session_token") }
-		return Session(bearer: bearer, cookieName: session?.name, cookieValue: session?.value)
+		guard let bearer = http.value(forHTTPHeaderField: "set-auth-token") else {
+			throw APIError.noSession
+		}
+		return bearer
 	}
 
 	// MARK: Authenticated JSON
@@ -107,6 +101,7 @@ struct PsstAPI {
 		guard let token = SessionStore.bearerToken else { throw APIError.noSession }
 		var request = URLRequest(url: baseURL.appending(path: path))
 		request.httpMethod = method
+		request.httpShouldHandleCookies = false
 		request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		return request
