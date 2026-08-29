@@ -90,6 +90,16 @@ struct CanvasWebView: UIViewRepresentable {
 			}
 		}
 
+		/// iOS reclaimed the page while backgrounded — bring it back fresh
+		/// instead of leaving a blank canvas.
+		func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+			if webView.url != nil {
+				webView.reload()
+			} else {
+				webView.load(URLRequest(url: Config.baseURL.appending(path: "/spaces")))
+			}
+		}
+
 		/// The app already holds the mic permission — don't prompt twice.
 		func webView(
 			_ webView: WKWebView,

@@ -199,14 +199,25 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 	useEffect(() => setBoardReady(true), []);
 
 	// Ambient sync: gentle polling, paused while dragging. Background tabs keep
-	// polling (browser throttling caps the rate) so the board is current the
-	// moment you glance back at it.
+	// polling (browser throttling caps the rate), and coming back into view —
+	// tab switch, or the iOS app returning to the foreground — revalidates
+	// immediately, so the board is current the moment you glance at it.
 	useEffect(() => {
-		const id = setInterval(() => {
+		const refresh = () => {
 			if (dragging.current || revalidator.state !== 'idle') return;
 			revalidator.revalidate();
-		}, pollMs);
-		return () => clearInterval(id);
+		};
+		const id = setInterval(refresh, pollMs);
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') refresh();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		window.addEventListener('focus', onVisible);
+		return () => {
+			clearInterval(id);
+			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('focus', onVisible);
+		};
 	}, [revalidator, pollMs]);
 
 	return (
