@@ -174,6 +174,10 @@ export function Composer() {
 
 	async function startRecording() {
 		setMicError(null);
+		if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+			setMicError('Voice notes need a secure connection — open psst over https.');
+			return;
+		}
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
