@@ -22,3 +22,7 @@ coverage/
 # misc
 .DS_Store
 *.log
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
