@@ -48,7 +48,7 @@ Three voices, one job each. Faces load from Google Fonts with real fallbacks (se
 
 | Voice | Face | Job | Never |
 |---|---|---|---|
-| **Serif** | Newsreader (`font-serif`) | The editorial voice, two registers. Roman: page/sheet/dialog titles, member content (note slips, card-back threads, comment input, note chips). *Italic*: system whispers — empty states, loading lines, overlay prompts — and the `psst` wordmark. The Wanderly/NOOK look. | Buttons, forms, functional labels |
+| **Serif** | Newsreader (`font-serif`) | The editorial voice, two registers. Roman: page/sheet/dialog titles, member content (card-back threads, comment input, note chips). Note slips speak typewriter instead — the one material-specific voice. *Italic*: system whispers — empty states, loading lines, overlay prompts — and the `psst` wordmark. The Wanderly/NOOK look. | Buttons, forms, functional labels |
 | **UI** | Geist | Everything interactive: buttons, labels, body, forms. Sizes from the `--text-*` scale. (Vercel's open-source Geist Sans, SIL OFL — the font is open even though their icons are not.) | Display headlines, member content |
 | **Meta** | mono (system stack) | Tiny technical labels: dates, counts, timestamps — uppercase, letterspaced, `text-xs`, `ink-soft`. The EXIF-chip feel. | Anything longer than a few words |
 
@@ -77,7 +77,7 @@ The physical identity of each item type — keep them distinct and true:
 | Item | Material | Signature details |
 |---|---|---|
 | Link | Postcard | Unfurl image, scallop-perforated stamp (`accent`, SVG mask), VISIT pill, favicon + site in meta voice |
-| Note | Paper slip | Seeded pastel tone, hand voice, slight rotation |
+| Note | Torn paper scrap | Seeded deckled edges, a washi-tape strip, typewriter voice (American Typewriter/Courier stack) — type scales down and top-aligns as the note grows |
 | Image | Photo print | White polaroid frame + deeper chin, sized to the photo's aspect ratio (never clipped; extreme ratios gently clamped), blurhash bloom on load |
 | Emoji | Die-cut sticker | The glyph on a white hand-cut circular pad — edge gently irregular, seeded per item — with a soft shadow; silent — no back, no thread, no reactions |
 | Drawing | Pencil stroke | Free strokes in one palette color, floating directly on the paper; silent like stickers |

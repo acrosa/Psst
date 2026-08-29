@@ -5,7 +5,7 @@ import { ArrowUpRightIcon, ChatIcon, PauseIcon, PlayIcon, XIcon } from '~/compon
 import { Avatar } from '~/components/ui/avatar';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
-import { ITEM_SIZES, seededTone } from '~/lib/design';
+import { ITEM_SIZES } from '~/lib/design';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { BlurhashCanvas } from './blurhash-canvas';
 import { CardBack } from './card-back';
@@ -107,7 +107,31 @@ export function PostcardNode({ data }: BoardNodeProps) {
 	);
 }
 
-/** Note → paper slip. */
+/** A torn-paper outline: straight-ish edges with a seeded deckle. */
+function tornEdge(seed: string, width: number, height: number): string {
+	let hash = 0;
+	for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 100000;
+	const rand = () => {
+		hash = (hash * 9301 + 49297) % 233280;
+		return hash / 233280;
+	};
+	const jitter = () => rand() * 5 - 2.5;
+	const STEP = 16;
+	const points: Array<[number, number]> = [];
+	for (let x = STEP; x < width; x += STEP) points.push([x + jitter(), Math.abs(jitter())]);
+	points.push([width - Math.abs(jitter()), Math.abs(jitter())]);
+	for (let y = STEP; y < height; y += STEP) points.push([width - Math.abs(jitter()), y + jitter()]);
+	points.push([width - Math.abs(jitter()), height - Math.abs(jitter())]);
+	for (let x = width - STEP; x > 0; x -= STEP)
+		points.push([x + jitter(), height - Math.abs(jitter())]);
+	points.push([Math.abs(jitter()), height - Math.abs(jitter())]);
+	for (let y = height - STEP; y > 0; y -= STEP) points.push([Math.abs(jitter()), y + jitter()]);
+	return `M ${Math.abs(jitter()).toFixed(1)} ${Math.abs(jitter()).toFixed(1)} L ${points
+		.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
+		.join(' L ')} Z`;
+}
+
+/** Note → a torn paper scrap taped to the board, spoken in typewriter. */
 export function SlipNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const [flipped, setFlipped] = useFlip();
@@ -125,15 +149,42 @@ export function SlipNode({ data }: BoardNodeProps) {
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
-				<div
-					className={cn(
-						'flex h-full w-full items-center justify-center overflow-hidden rounded-lg border border-line p-4 shadow-card',
-						seededTone(item.id),
-					)}
-				>
-					<p className="line-clamp-6 max-h-full font-serif text-2xl leading-snug [overflow-wrap:anywhere]">
-						{item.text}
-					</p>
+				<div className="relative h-full w-full">
+					<svg
+						viewBox={`0 0 ${size.w} ${size.h}`}
+						preserveAspectRatio="none"
+						className="absolute inset-0 h-full w-full [filter:drop-shadow(0_3px_7px_rgb(64_56_47/0.16))]"
+						aria-hidden
+					>
+						<path d={tornEdge(item.id, size.w, size.h)} fill="var(--color-card)" />
+					</svg>
+					{/* washi tape */}
+					<span
+						aria-hidden
+						className="-top-2.5 -translate-x-1/2 absolute left-1/2 h-6 w-24 rotate-[-2deg] bg-butter/70 shadow-sm"
+					/>
+					<div
+						className={cn(
+							'absolute inset-0 flex',
+							(item.text?.length ?? 0) <= 60 ? 'items-center p-6' : 'items-start px-5 pt-6 pb-4',
+						)}
+					>
+						<p
+							className={cn(
+								'max-h-full text-ink [overflow-wrap:anywhere]',
+								(item.text?.length ?? 0) <= 60
+									? 'line-clamp-4 text-[16px] leading-relaxed'
+									: (item.text?.length ?? 0) <= 160
+										? 'line-clamp-6 text-[13.5px] leading-normal'
+										: 'line-clamp-7 text-[12px] leading-snug',
+							)}
+							style={{
+								fontFamily: "'American Typewriter', 'Courier Prime', 'Courier New', monospace",
+							}}
+						>
+							{item.text}
+						</p>
+					</div>
 				</div>
 			}
 			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
