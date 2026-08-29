@@ -43,6 +43,7 @@ export type BoardComment = {
 	id: string;
 	authorId: string;
 	authorName: string | null;
+	authorImage: string | null;
 	text: string;
 	createdAt: string;
 };
@@ -108,6 +109,7 @@ export async function getBoardItems(canvasId: string, assetUrl: (key: string) =>
 				itemId: schema.itemComments.itemId,
 				authorId: schema.itemComments.authorId,
 				authorName: schema.users.name,
+				authorImage: schema.users.image,
 				text: schema.itemComments.text,
 				createdAt: schema.itemComments.createdAt,
 			})
@@ -172,6 +174,7 @@ export async function getBoardItems(canvasId: string, assetUrl: (key: string) =>
 					id: c.id,
 					authorId: c.authorId,
 					authorName: c.authorName,
+					authorImage: c.authorImage,
 					text: c.text,
 					createdAt: c.createdAt.toISOString(),
 				})),

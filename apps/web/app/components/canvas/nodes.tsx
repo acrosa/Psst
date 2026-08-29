@@ -2,6 +2,7 @@ import type { NodeProps } from '@xyflow/react';
 import { useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { ArrowUpRightIcon, ChatIcon, PauseIcon, PlayIcon, XIcon } from '~/components/icons';
+import { Avatar } from '~/components/ui/avatar';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, seededTone } from '~/lib/design';
@@ -424,11 +425,16 @@ function CardBadges({ item, onFlip }: { item: BoardItem; onFlip: () => void }) {
 			</span>
 			{/* The tail of the thread, peeking out without a flip */}
 			{latest.map((comment) => (
-				<span
-					key={comment.id}
-					className="max-w-full truncate font-serif text-[13px] text-ink-soft leading-tight"
-				>
-					<span className="text-ink-faint">{comment.authorName ?? 'Someone'}:</span> {comment.text}
+				<span key={comment.id} className="flex max-w-full items-center gap-1.5">
+					<Avatar
+						name={comment.authorName}
+						image={comment.authorImage}
+						size="sm"
+						className="!h-4 !w-4 shrink-0 !text-[8px]"
+					/>
+					<span className="truncate font-serif text-[13px] text-ink-soft leading-tight">
+						{comment.text}
+					</span>
 				</span>
 			))}
 		</button>

@@ -90,6 +90,7 @@ const BOARD_ITEMS: BoardItem[] = [
 				id: 'c1',
 				authorId: 'u2',
 				authorName: 'Ale',
+				authorImage: null,
 				text: 'love this one',
 				createdAt: new Date().toISOString(),
 			},
