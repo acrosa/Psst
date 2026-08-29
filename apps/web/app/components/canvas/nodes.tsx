@@ -236,6 +236,9 @@ function stickerCut(seed: string): string {
 export function StickerNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const size = ITEM_SIZES.emoji;
+	const [confirming, setConfirming] = useState(false);
+	const canDelete = !frozen && item.authorId === currentUserId;
+	const longPress = useLongPress(() => canDelete && setConfirming(true));
 
 	return (
 		<FlipCard
@@ -248,7 +251,10 @@ export function StickerNode({ data }: BoardNodeProps) {
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => {}}
 			front={
-				<div className="group/sticker relative h-full w-full">
+				<div
+					className="group/sticker relative h-full w-full select-none [-webkit-touch-callout:none]"
+					{...longPress}
+				>
 					<svg
 						viewBox="0 0 100 100"
 						className="absolute inset-0 h-full w-full [filter:drop-shadow(0_4px_8px_rgb(64_56_47/0.2))]"
@@ -259,7 +265,13 @@ export function StickerNode({ data }: BoardNodeProps) {
 					<span className="absolute inset-0 grid place-items-center text-[62px] leading-none">
 						{item.text}
 					</span>
-					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
+					<HoverDelete
+						item={item}
+						currentUserId={currentUserId}
+						frozen={frozen}
+						open={confirming}
+						onOpenChange={setConfirming}
+					/>
 				</div>
 			}
 		/>
@@ -393,6 +405,9 @@ export function AudioNode({ data }: BoardNodeProps) {
 export function DrawingNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const drawing = parseDrawing(item.text);
+	const [confirming, setConfirming] = useState(false);
+	const canDelete = !frozen && item.authorId === currentUserId;
+	const longPress = useLongPress(() => canDelete && setConfirming(true));
 
 	return (
 		<FlipCard
@@ -405,7 +420,10 @@ export function DrawingNode({ data }: BoardNodeProps) {
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => {}}
 			front={
-				<div className="group/sticker h-full w-full">
+				<div
+					className="group/sticker h-full w-full select-none [-webkit-touch-callout:none]"
+					{...longPress}
+				>
 					<svg
 						viewBox={`0 0 ${drawing.w} ${drawing.h}`}
 						className="h-full w-full overflow-visible"
@@ -420,7 +438,13 @@ export function DrawingNode({ data }: BoardNodeProps) {
 							fill="none"
 						/>
 					</svg>
-					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
+					<HoverDelete
+						item={item}
+						currentUserId={currentUserId}
+						frozen={frozen}
+						open={confirming}
+						onOpenChange={setConfirming}
+					/>
 				</div>
 			}
 		/>
@@ -439,18 +463,42 @@ function parseDrawing(raw: string | null): DrawingData {
 	return { color: 'var(--color-ink)', d: '', w: 96, h: 96 };
 }
 
-/** Author-only ×, fading in on hover — silent items still leave the board. */
+/** Long-press (touch/pen, 500ms) — the mobile way to reach delete on silent items. */
+function useLongPress(onLongPress: () => void) {
+	const timer = useRef<number | null>(null);
+	const clear = () => {
+		if (timer.current) {
+			window.clearTimeout(timer.current);
+			timer.current = null;
+		}
+	};
+	return {
+		onPointerDown: (event: React.PointerEvent) => {
+			if (event.pointerType === 'mouse') return;
+			timer.current = window.setTimeout(onLongPress, 500);
+		},
+		onPointerUp: clear,
+		onPointerMove: clear,
+		onPointerLeave: clear,
+		onPointerCancel: clear,
+	};
+}
+
+/** Author-only ×, on hover (desktop) or via long-press (the `open` control). */
 function HoverDelete({
 	item,
 	currentUserId,
 	frozen,
+	open,
+	onOpenChange,
 }: {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 }) {
 	const deleteFetcher = useFetcher();
-	const [confirming, setConfirming] = useState(false);
 	if (frozen || item.authorId !== currentUserId) return null;
 
 	return (
@@ -458,14 +506,14 @@ function HoverDelete({
 			<button
 				type="button"
 				aria-label="Remove from the board"
-				onClick={() => setConfirming(true)}
+				onClick={() => onOpenChange(true)}
 				className="nodrag -top-1.5 -right-1.5 absolute grid h-6 w-6 place-items-center rounded-full border border-line bg-card text-ink-soft opacity-0 shadow-card transition-opacity hover:text-accent-deep group-hover/sticker:opacity-100"
 			>
 				<XIcon className="h-3 w-3" />
 			</button>
 			<ConfirmDialog
-				open={confirming}
-				onClose={() => setConfirming(false)}
+				open={open}
+				onClose={() => onOpenChange(false)}
 				onConfirm={() =>
 					deleteFetcher.submit({ intent: 'delete-item', itemId: item.id }, { method: 'post' })
 				}
