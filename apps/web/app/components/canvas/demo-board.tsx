@@ -2,201 +2,281 @@ import {
 	Background,
 	BackgroundVariant,
 	type Node,
-	type NodeProps,
 	ReactFlow,
+	ReactFlowProvider,
 	applyNodeChanges,
+	useReactFlow,
 } from '@xyflow/react';
-import { useCallback, useState } from 'react';
-import { tornEdge } from './nodes';
+import { useRef, useState } from 'react';
+import { PencilIcon } from '~/components/icons';
+import type { BoardItem } from '~/lib/services/canvases.server';
+import { DrawLayer, PENCIL_COLORS, type Stroke } from './composer';
+import { AudioNode, DrawingNode, PostcardNode, SlipNode, StickerNode } from './nodes';
 
 import '@xyflow/react/dist/style.css';
 
 /**
- * The landing page's playground: real materials, nothing real behind them.
- * Positions live in component state, reactions are a puff of local delight —
- * nothing is fetched, posted, or persisted.
+ * The landing page's playground: the real board nodes over demo items.
+ * Positions, likes, and pencil drawings live in component state — nothing
+ * is fetched, posted, or persisted.
  */
 
-type DemoData = { burst?: number };
-
-function DemoSlip({ data }: NodeProps<Node<DemoData & { text: string; tone: string }>>) {
-	return (
-		<Burstable burst={data.burst}>
-			<div className="relative h-[120px] w-[220px]">
-				<svg
-					viewBox="0 0 220 120"
-					className="absolute inset-0 h-full w-full [filter:drop-shadow(0_3px_7px_rgb(64_56_47/0.16))]"
-					aria-hidden="true"
-				>
-					<path d={tornEdge(data.text, 220, 120)} fill={data.tone} />
-				</svg>
-				<span
-					aria-hidden
-					className="-top-2.5 -translate-x-1/2 absolute left-1/2 h-6 w-20 rotate-[-2deg] bg-butter/70 shadow-sm"
-				/>
-				<p className="relative px-5 py-6 font-mono text-[13px] text-ink leading-relaxed">
-					{data.text}
-				</p>
-			</div>
-		</Burstable>
-	);
-}
-
-function DemoSticker({ data }: NodeProps<Node<DemoData & { emoji: string }>>) {
-	return (
-		<Burstable burst={data.burst}>
-			<span className="block text-6xl [filter:drop-shadow(0_4px_8px_rgb(64_56_47/0.2))]">
-				{data.emoji}
-			</span>
-		</Burstable>
-	);
-}
-
-function DemoDrawing({ data }: NodeProps<Node<DemoData & { d: string; color: string }>>) {
-	return (
-		<svg viewBox="0 0 140 110" className="h-[110px] w-[140px]" aria-hidden="true">
-			<path
-				d={data.d}
-				stroke={data.color}
-				strokeWidth={3.5}
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				fill="none"
-			/>
-		</svg>
-	);
-}
-
-function DemoAudio({ data }: NodeProps<Node<DemoData>>) {
-	const bars = [8, 16, 11, 22, 9, 18, 13, 24, 10, 15, 7, 19, 12, 8];
-	return (
-		<Burstable burst={data.burst}>
-			<div className="flex h-[64px] w-[230px] items-center gap-3.5 rounded-[22px] bg-card px-4 shadow-card">
-				<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white">
-					<svg viewBox="0 0 12 14" className="ml-0.5 h-3.5 w-3.5 fill-current" aria-hidden="true">
-						<path d="M0 0 L12 7 L0 14 Z" />
-					</svg>
-				</span>
-				<span className="flex flex-1 items-center gap-[3px]">
-					{bars.map((height, index) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: static decoration
-						<span key={index} className="w-[3px] rounded-full bg-ink/60" style={{ height }} />
-					))}
-				</span>
-				<span className="font-mono text-[11px] text-ink-faint">0:07</span>
-			</div>
-		</Burstable>
-	);
-}
-
-function DemoPostcard({ data }: NodeProps<Node<DemoData & { title: string; domain: string }>>) {
-	return (
-		<Burstable burst={data.burst}>
-			<div className="w-[240px] overflow-hidden rounded-lg border border-line bg-card shadow-card">
-				<div className="h-[110px] bg-gradient-to-br from-sky via-meadow to-butter" />
-				<div className="space-y-1 p-3">
-					<p className="font-medium text-[13px] text-ink leading-snug">{data.title}</p>
-					<p className="font-mono text-[10px] text-ink-faint uppercase tracking-wide">
-						{data.domain}
-					</p>
-				</div>
-			</div>
-		</Burstable>
-	);
-}
-
-/** Double-tap delight: a heart pops and fades, then is forgotten. */
-function Burstable({ burst, children }: { burst?: number; children: React.ReactNode }) {
-	return (
-		<div className="relative">
-			{children}
-			{burst ? (
-				<span
-					key={burst}
-					className="-top-6 -translate-x-1/2 pointer-events-none absolute left-1/2 text-3xl"
-					style={{ animation: 'like-burst 0.9s ease-out forwards' }}
-				>
-					🫶
-				</span>
-			) : null}
-		</div>
-	);
-}
+const VISITOR = 'visitor';
 
 const nodeTypes = {
-	slip: DemoSlip,
-	sticker: DemoSticker,
-	drawing: DemoDrawing,
-	audio: DemoAudio,
-	postcard: DemoPostcard,
+	link: PostcardNode,
+	note: SlipNode,
+	emoji: StickerNode,
+	drawing: DrawingNode,
+	audio: AudioNode,
 };
+
+function demoItem(partial: Partial<BoardItem> & Pick<BoardItem, 'id' | 'type'>): BoardItem {
+	return {
+		url: null,
+		text: null,
+		x: 0,
+		y: 0,
+		z: 0,
+		rotation: 0,
+		scale: 1,
+		authorId: 'demo-ale',
+		authorName: 'Ale',
+		createdAt: '2026-08-29T09:00:00.000Z',
+		unfurl: null,
+		assets: [],
+		comments: [],
+		reactions: [],
+		...partial,
+	};
+}
 
 const heart =
 	'M 70 96 C 40 76 18 58 22 38 C 25 22 44 16 56 26 C 63 32 68 40 70 46 C 72 40 77 32 84 26 C 96 16 115 22 118 38 C 122 58 100 76 70 96 Z';
 
-const initialNodes: Node[] = [
+const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> = [
 	{
-		id: 'slip-1',
-		type: 'slip',
 		position: { x: -700, y: -420 },
-		data: { text: 'meet you at six?', tone: 'var(--color-card)' },
+		item: demoItem({
+			id: 'demo-note-six',
+			type: 'note',
+			text: 'meet you at six?',
+			rotation: -2,
+		}),
 	},
 	{
-		id: 'slip-2',
-		type: 'slip',
 		position: { x: 300, y: 250 },
-		data: { text: 'psst — everything here is draggable', tone: 'var(--color-sky)' },
+		item: demoItem({
+			id: 'demo-note-drag',
+			type: 'note',
+			text: 'psst — everything here is draggable (double-tap to like)',
+			rotation: 1.5,
+			authorId: 'demo-brendi',
+			authorName: 'Brendi',
+		}),
 	},
 	{
-		id: 'postcard-1',
-		type: 'postcard',
 		position: { x: 380, y: -360 },
-		data: { title: 'the bakery around the corner', domain: 'maps.app' },
+		item: demoItem({
+			id: 'demo-link-bakery',
+			type: 'link',
+			url: 'https://maps.app/the-bakery-around-the-corner',
+			rotation: 2,
+			unfurl: {
+				title: 'the bakery around the corner',
+				description: 'open till six — the croissants go early.',
+				imageUrl: null,
+				faviconUrl: null,
+				siteName: 'maps.app',
+				status: 'ok',
+			},
+			reactions: [{ emoji: '🔥', userId: 'demo-brendi' }],
+			comments: [
+				{
+					id: 'demo-comment-1',
+					authorId: 'demo-brendi',
+					authorName: 'Brendi',
+					authorImage: null,
+					text: 'saturday?',
+					createdAt: '2026-08-29T09:05:00.000Z',
+				},
+			],
+		}),
 	},
 	{
-		id: 'audio-1',
-		type: 'audio',
 		position: { x: -680, y: 500 },
-		data: {},
+		item: demoItem({
+			id: 'demo-audio',
+			type: 'audio',
+			text: JSON.stringify({
+				duration: 7,
+				peaks: [
+					0.3, 0.7, 0.45, 0.9, 0.35, 0.75, 0.5, 1, 0.4, 0.6, 0.28, 0.8, 0.5, 0.33, 0.65, 0.42, 0.88,
+					0.36, 0.7, 0.48, 0.58, 0.3, 0.52, 0.26,
+				],
+			}),
+			rotation: -1,
+			authorId: 'demo-brendi',
+			authorName: 'Brendi',
+		}),
 	},
 	{
-		id: 'drawing-1',
-		type: 'drawing',
 		position: { x: -800, y: 60 },
-		data: { d: heart, color: 'var(--color-accent)' },
+		item: demoItem({
+			id: 'demo-drawing-heart',
+			type: 'drawing',
+			text: JSON.stringify({ color: PENCIL_COLORS[0], d: heart, w: 140, h: 110 }),
+		}),
 	},
-	{ id: 'sticker-1', type: 'sticker', position: { x: 560, y: 40 }, data: { emoji: '🐸' } },
-	{ id: 'sticker-2', type: 'sticker', position: { x: 240, y: -470 }, data: { emoji: '🍓' } },
-	{ id: 'sticker-3', type: 'sticker', position: { x: -300, y: 430 }, data: { emoji: '⭐' } },
+	{
+		position: { x: 560, y: 40 },
+		item: demoItem({ id: 'demo-sticker-frog', type: 'emoji', text: '🐸', rotation: 3 }),
+	},
+	{
+		position: { x: 240, y: -470 },
+		item: demoItem({ id: 'demo-sticker-berry', type: 'emoji', text: '🍓', rotation: -6 }),
+	},
+	{
+		position: { x: -300, y: 430 },
+		item: demoItem({ id: 'demo-sticker-star', type: 'emoji', text: '⭐', rotation: 8 }),
+	},
 ];
 
-export function DemoBoard() {
-	const [nodes, setNodes] = useState(initialNodes);
+function toggleLike(item: BoardItem): BoardItem {
+	const mine = item.reactions.some((r) => r.userId === VISITOR && r.emoji === '🫶');
+	return {
+		...item,
+		reactions: mine
+			? item.reactions.filter((r) => !(r.userId === VISITOR && r.emoji === '🫶'))
+			: [...item.reactions, { emoji: '🫶', userId: VISITOR }],
+	};
+}
 
-	const burst = useCallback((_event: React.MouseEvent, node: Node) => {
-		setNodes((prev) =>
-			prev.map((n) => (n.id === node.id ? { ...n, data: { ...n.data, burst: Date.now() } } : n)),
-		);
-	}, []);
+function DemoBoardInner() {
+	const { screenToFlowPosition } = useReactFlow();
+	const [drawing, setDrawing] = useState(false);
+	const [strokes, setStrokes] = useState<Stroke[]>([]);
+	const settleTimer = useRef<number | null>(null);
+
+	const [nodes, setNodes] = useState<Node[]>(() => {
+		const onLike = (itemId: string) => {
+			setNodes((prev) =>
+				prev.map((node) =>
+					node.id === itemId
+						? { ...node, data: { ...node.data, item: toggleLike(node.data.item as BoardItem) } }
+						: node,
+				),
+			);
+		};
+		return demoItems.map(({ item, position }) => ({
+			id: item.id,
+			type: item.type,
+			position,
+			data: { item, currentUserId: VISITOR, frozen: true, onLike },
+		}));
+	});
+
+	function commitStrokes(current: Stroke[]) {
+		if (settleTimer.current) {
+			window.clearTimeout(settleTimer.current);
+			settleTimer.current = null;
+		}
+		if (current.length > 0) {
+			const flowStrokes = current.map((stroke) => stroke.map((p) => screenToFlowPosition(p)));
+			const points = flowStrokes.flat();
+			const pad = 8;
+			const minX = Math.min(...points.map((p) => p.x)) - pad;
+			const minY = Math.min(...points.map((p) => p.y)) - pad;
+			const maxX = Math.max(...points.map((p) => p.x)) + pad;
+			const maxY = Math.max(...points.map((p) => p.y)) + pad;
+			const r = (n: number) => Math.round(n * 10) / 10;
+			const d = flowStrokes
+				.map((stroke) => `M ${stroke.map((p) => `${r(p.x - minX)} ${r(p.y - minY)}`).join(' L ')}`)
+				.join(' ');
+			const item = demoItem({
+				id: `demo-drawing-${Date.now()}`,
+				type: 'drawing',
+				text: JSON.stringify({
+					color: PENCIL_COLORS[0],
+					d,
+					w: Math.max(8, Math.round(maxX - minX)),
+					h: Math.max(8, Math.round(maxY - minY)),
+				}),
+				authorId: VISITOR,
+				authorName: 'you',
+			});
+			setNodes((prev) => [
+				...prev,
+				{
+					id: item.id,
+					type: 'drawing',
+					position: { x: minX, y: minY },
+					data: { item, currentUserId: VISITOR, frozen: true },
+				},
+			]);
+		}
+		setStrokes([]);
+	}
+
+	function addStroke(stroke: Stroke) {
+		setStrokes((prev) => {
+			const next = [...prev, stroke];
+			if (settleTimer.current) window.clearTimeout(settleTimer.current);
+			settleTimer.current = window.setTimeout(() => commitStrokes(next), 1400);
+			return next;
+		});
+	}
 
 	return (
-		<ReactFlow
-			nodes={nodes}
-			onNodesChange={(changes) => setNodes((prev) => applyNodeChanges(changes, prev))}
-			nodeTypes={nodeTypes}
-			nodesConnectable={false}
-			nodesDraggable
-			panOnDrag={false}
-			zoomOnScroll={false}
-			zoomOnPinch={false}
-			zoomOnDoubleClick={false}
-			preventScrolling={false}
-			proOptions={{ hideAttribution: true }}
-			fitView
-			fitViewOptions={{ padding: 0.1 }}
-			onNodeDoubleClick={burst}
-		>
-			<Background variant={BackgroundVariant.Dots} gap={30} size={1.5} color="var(--color-line)" />
-		</ReactFlow>
+		<div className="relative h-full w-full">
+			<ReactFlow
+				nodes={nodes}
+				onNodesChange={(changes) => setNodes((prev) => applyNodeChanges(changes, prev))}
+				nodeTypes={nodeTypes}
+				nodesConnectable={false}
+				nodesDraggable
+				panOnDrag={false}
+				zoomOnScroll={false}
+				zoomOnPinch={false}
+				zoomOnDoubleClick={false}
+				preventScrolling={false}
+				proOptions={{ hideAttribution: true }}
+				fitView
+				fitViewOptions={{ padding: 0.05 }}
+				minZoom={0.2}
+			>
+				<Background
+					variant={BackgroundVariant.Dots}
+					gap={30}
+					size={1.5}
+					color="var(--color-line)"
+				/>
+			</ReactFlow>
+			{drawing ? (
+				<DrawLayer color={PENCIL_COLORS[0]} strokes={strokes} onStroke={addStroke} />
+			) : null}
+			<button
+				type="button"
+				aria-label={drawing ? 'Stop drawing' : 'Draw on this page'}
+				aria-pressed={drawing}
+				onClick={() => {
+					if (drawing) commitStrokes(strokes);
+					setDrawing((prev) => !prev);
+				}}
+				className={`absolute right-6 bottom-6 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line shadow-card transition ${
+					drawing ? 'bg-accent text-white' : 'bg-card text-ink-soft hover:text-ink'
+				}`}
+			>
+				<PencilIcon className="h-4.5 w-4.5" />
+			</button>
+		</div>
+	);
+}
+
+export function DemoBoard() {
+	return (
+		<ReactFlowProvider>
+			<DemoBoardInner />
+		</ReactFlowProvider>
 	);
 }

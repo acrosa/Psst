@@ -16,10 +16,10 @@ import { ITEM_SIZES, STICKER_EMOJIS } from '~/lib/design';
 import { looksLikeUrl, normalizeUrl } from '~/lib/links';
 
 /** Pencil colors — one gesture of color, from the psst palette. */
-const PENCIL_COLORS = ['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'];
+export const PENCIL_COLORS = ['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'];
 
 type Point = { x: number; y: number };
-type Stroke = Point[];
+export type Stroke = Point[];
 
 /**
  * One input, four kinds of keepsakes: a URL becomes a postcard, words become
@@ -513,7 +513,7 @@ export function Composer() {
  * converted to flow coordinates on submit (the overlay blocks pan/zoom, so
  * the viewport can't shift mid-drawing).
  */
-function DrawLayer({
+export function DrawLayer({
 	color,
 	strokes,
 	onStroke,

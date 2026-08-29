@@ -25,12 +25,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function Home() {
 	const [boardReady, setBoardReady] = useState(false);
-	useEffect(() => setBoardReady(true), []);
+	useEffect(() => setBoardReady(window.matchMedia('(min-width: 640px)').matches), []);
 
 	return (
 		<div className="relative min-h-svh overflow-hidden">
 			{boardReady ? (
-				<div className="absolute inset-0">
+				<div className="absolute inset-0 max-sm:hidden">
 					<DemoBoard />
 				</div>
 			) : null}
