@@ -6,12 +6,19 @@ import { FormError } from '~/components/ui/field-error';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { auth, enabledProviders, getUser } from '~/lib/auth.server';
+import { ogMeta } from '~/lib/og';
 import { safeNext } from '~/lib/redirects';
 import { completeInviteIfPresent } from '~/lib/services/invites.server';
 import type { Route } from './+types/login';
 
 export function meta() {
-	return [{ title: 'Sign in — psst' }];
+	return [
+		{ title: 'Sign in — psst' },
+		...ogMeta({
+			title: 'psst',
+			description: 'A little shared canvas for the people you whisper to.',
+		}),
+	];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

@@ -1,11 +1,15 @@
 import { Link, redirect } from 'react-router';
 import { getUser } from '~/lib/auth.server';
+import { ogMeta } from '~/lib/og';
 import type { Route } from './+types/home';
 
 export function meta() {
 	return [
 		{ title: 'psst' },
-		{ name: 'description', content: 'A little shared canvas for the people you whisper to.' },
+		...ogMeta({
+			title: 'psst',
+			description: 'A little shared canvas for the people you whisper to.',
+		}),
 	];
 }
 

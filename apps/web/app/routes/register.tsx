@@ -8,13 +8,20 @@ import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { auth, enabledProviders, getUser } from '~/lib/auth.server';
 import { track } from '~/lib/metrics.server';
+import { ogMeta } from '~/lib/og';
 import { safeNext } from '~/lib/redirects';
 import { completeInviteIfPresent } from '~/lib/services/invites.server';
 import { createSpace } from '~/lib/services/spaces.server';
 import type { Route } from './+types/register';
 
 export function meta() {
-	return [{ title: 'Join psst' }];
+	return [
+		{ title: 'Join psst' },
+		...ogMeta({
+			title: 'Join psst',
+			description: 'A little shared canvas for the people you whisper to.',
+		}),
+	];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

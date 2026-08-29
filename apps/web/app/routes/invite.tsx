@@ -1,12 +1,20 @@
 import { Form, Link, redirect, useNavigation } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { getUser, requireUser } from '~/lib/auth.server';
+import { ogMeta } from '~/lib/og';
 import { acceptInvite, getInviteByToken } from '~/lib/services/invites.server';
 import { getMembership } from '~/lib/services/spaces.server';
 import type { Route } from './+types/invite';
 
-export function meta() {
-	return [{ title: "You're invited — psst" }];
+export function meta({ data }: Route.MetaArgs) {
+	const space = data?.invite ? `${data.invite.spaceEmoji} ${data.invite.spaceName}` : null;
+	return [
+		{ title: "You're invited — psst" },
+		...ogMeta({
+			title: space ? `You're invited to ${space}` : "You're invited — psst",
+			description: "Come drop something on today's canvas.",
+		}),
+	];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
