@@ -144,6 +144,7 @@ export function Board({
 					panOnDrag
 					zoomOnScroll
 					zoomOnDoubleClick={false}
+					proOptions={{ hideAttribution: true }}
 					minZoom={0.35}
 					maxZoom={1.75}
 					fitView
