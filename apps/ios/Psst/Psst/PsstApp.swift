@@ -21,6 +21,7 @@ final class AppState {
 			Task { await api.registerDevice(token: token, remove: true) }
 		}
 		SessionStore.clear()
+		Config.lastSpaceId = nil
 		isSignedIn = false
 	}
 }

@@ -37,6 +37,7 @@ struct CanvasWebView: UIViewRepresentable {
 		let webView = WKWebView(frame: .zero, configuration: configuration)
 		webView.navigationDelegate = context.coordinator
 		webView.uiDelegate = context.coordinator
+		context.coordinator.trackLastSpace(of: webView)
 		webView.allowsBackForwardNavigationGestures = true
 		webView.isOpaque = false
 		webView.backgroundColor = UIColor(PsstColor.paper)
@@ -49,7 +50,9 @@ struct CanvasWebView: UIViewRepresentable {
 		// proxy in front of an http dev server uses the unprefixed name), so
 		// set both and let it read the one it knows.
 		let base = Config.baseURL
-		let target = base.appending(path: "/spaces")
+		let target = base.appending(
+			path: Config.lastSpaceId.map { "/spaces/\($0)" } ?? "/spaces",
+		)
 		let secure = base.scheme == "https"
 		let cookies: [HTTPCookie]
 		if let value = SessionStore.bearerToken {
@@ -90,9 +93,22 @@ struct CanvasWebView: UIViewRepresentable {
 	final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
 		private let onSessionExpired: () -> Void
 		private var expired = false
+		private var urlObservation: NSKeyValueObservation?
 
 		init(onSessionExpired: @escaping () -> Void) {
 			self.onSessionExpired = onSessionExpired
+		}
+
+		/// Track the space on screen across SPA route changes, which never
+		/// reach the navigation delegate.
+		func trackLastSpace(of webView: WKWebView) {
+			urlObservation = webView.observe(\.url) { view, _ in
+				guard let url = view.url, url.host() == Config.baseURL.host() else { return }
+				let parts = url.pathComponents
+				if parts.count >= 3, parts[1] == "spaces" {
+					Config.lastSpaceId = parts[2]
+				}
+			}
 		}
 
 		/// Keep navigation on psst; hand external links to the system.

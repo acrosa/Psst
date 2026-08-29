@@ -23,4 +23,10 @@ enum Config {
 	static func setBaseURL(_ value: String) {
 		UserDefaults(suiteName: appGroup)?.set(value, forKey: "baseURL")
 	}
+
+	/// The space the canvas last showed — where the app reopens.
+	static var lastSpaceId: String? {
+		get { UserDefaults(suiteName: appGroup)?.string(forKey: "lastSpaceId") }
+		set { UserDefaults(suiteName: appGroup)?.set(newValue, forKey: "lastSpaceId") }
+	}
 }

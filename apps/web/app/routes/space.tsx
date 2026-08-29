@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useFetcher, useRevalidator } from 'react-router';
+import { Link, redirect, useFetcher, useRevalidator } from 'react-router';
 import { AppHeader } from '~/components/app-header';
 import { Board } from '~/components/canvas/board';
 import { Composer } from '~/components/canvas/composer';
@@ -41,7 +41,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	await ensureMember(params.spaceId, user.id);
 	const space = await getSpace(params.spaceId);
 	if (!space) {
-		throw new Response('Not found', { status: 404 });
+		throw redirect('/spaces');
 	}
 
 	const [members, canvas] = await Promise.all([
