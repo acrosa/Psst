@@ -68,7 +68,7 @@ export type BoardAsset = {
 
 export type BoardItem = {
 	id: string;
-	type: 'link' | 'note' | 'image' | 'emoji' | 'drawing';
+	type: 'link' | 'note' | 'image' | 'emoji' | 'drawing' | 'audio';
 	url: string | null;
 	text: string | null;
 	x: number;

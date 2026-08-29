@@ -301,6 +301,77 @@ const IMAGE_EXT_BY_MIME: Record<string, string> = {
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
+const AUDIO_EXT_BY_MIME: Record<string, string> = {
+	'audio/webm': 'webm',
+	'audio/mp4': 'm4a',
+	'audio/mpeg': 'mp3',
+	'audio/ogg': 'ogg',
+	'audio/wav': 'wav',
+};
+
+const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
+const MAX_AUDIO_SECONDS = 61;
+
+/** Validate the client-computed waveform meta: a duration and 0..1 peaks. */
+function parseAudioMeta(raw: string) {
+	let parsed: { duration?: unknown; peaks?: unknown };
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		reject('That voice note didn’t survive the trip.');
+	}
+	const duration = Number(parsed.duration);
+	if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_AUDIO_SECONDS) {
+		reject('Voice notes stay short — under a minute.');
+	}
+	const peaks = Array.isArray(parsed.peaks)
+		? parsed.peaks
+				.slice(0, 96)
+				.map((p) => Math.min(1, Math.max(0, Math.round(Number(p) * 100) / 100 || 0)))
+		: [];
+	return { duration: Math.round(duration * 10) / 10, peaks };
+}
+
+export async function createAudioItem(args: {
+	spaceId: string;
+	userId: string;
+	file: File;
+	meta: string;
+	position?: DropPosition;
+}) {
+	await requireMember(args.spaceId, args.userId);
+	const space = await getSpace(args.spaceId);
+	if (!space) reject('Space not found.');
+
+	const ext = AUDIO_EXT_BY_MIME[args.file.type.split(';')[0]];
+	if (!ext) reject('That doesn’t sound like audio.');
+	if (args.file.size === 0) reject('That recording looks empty.');
+	if (args.file.size > MAX_AUDIO_BYTES) reject('Voice notes stay small — under 5MB.');
+	const meta = parseAudioMeta(args.meta);
+
+	const canvas = await getOrCreateTodayCanvas(args.spaceId, space.timezone);
+	const placement = await nextPlacement(canvas.id, args.position);
+
+	const [item] = await db
+		.insert(schema.items)
+		.values({
+			canvasId: canvas.id,
+			spaceId: args.spaceId,
+			authorId: args.userId,
+			type: 'audio',
+			text: JSON.stringify(meta),
+			...placement,
+		})
+		.returning();
+
+	const key = `items/${item.id}/voice.${ext}`;
+	await putObject(key, Buffer.from(await args.file.arrayBuffer()), args.file.type);
+	await db.insert(schema.itemAssets).values({ itemId: item.id, kind: 'original', storageKey: key });
+
+	track({ event: 'item_posted', icon: '🎙️', userId: args.userId, tags: { type: 'audio' } });
+	return item;
+}
+
 export async function createImageItem(args: {
 	spaceId: string;
 	userId: string;

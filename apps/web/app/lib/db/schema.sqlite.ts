@@ -161,7 +161,7 @@ export const items = sqliteTable(
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
-		type: text('type', { enum: ['link', 'note', 'image', 'emoji', 'drawing'] }).notNull(),
+		type: text('type', { enum: ['link', 'note', 'image', 'emoji', 'drawing', 'audio'] }).notNull(),
 		url: text('url'),
 		text: text('text'),
 		x: real('x').notNull().default(0),

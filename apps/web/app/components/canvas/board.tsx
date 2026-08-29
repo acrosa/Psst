@@ -13,6 +13,7 @@ import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { DropPasteLayer } from './drop-paste';
 import {
+	AudioNode,
 	type BoardNodeData,
 	DrawingNode,
 	PostcardNode,
@@ -28,6 +29,7 @@ const nodeTypes: NodeTypes = {
 	emoji: StickerNode,
 	image: PrintNode,
 	drawing: DrawingNode,
+	audio: AudioNode,
 };
 
 export type BoardProps = {

@@ -25,14 +25,19 @@ export default defineConfig({
 	use: {
 		baseURL: E2E_URL,
 		trace: 'on-first-retry',
+		// The voice-note spec records from a fake microphone.
+		permissions: ['microphone'],
 		// Deterministic day-boundary math: browser timezone (which seeds each
 		// space's timezone) matches the UTC dates the specs fabricate.
 		timezoneId: 'UTC',
 		// Sandboxed CI images sometimes pre-install a Chromium whose build number
 		// doesn't match this Playwright version — point at it explicitly there.
-		...(process.env.PLAYWRIGHT_CHROMIUM_PATH
-			? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
-			: {}),
+		launchOptions: {
+			args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+			...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+				? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+				: {}),
+		},
 	},
 	projects: [
 		{

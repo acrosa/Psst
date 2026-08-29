@@ -182,6 +182,19 @@ test.describe('the daily canvas', () => {
 		await expect(page.locator('.react-flow__node').getByText('🐸')).toBeVisible();
 	});
 
+	test('a voice note records and lands as a playable card', async ({ page }) => {
+		await registerOntoCanvas(page);
+
+		await page.getByRole('button', { name: /record a voice note/i }).click();
+		await expect(page.getByText(/recording — up to a minute/i)).toBeVisible();
+		await page.waitForTimeout(1500);
+		await page.getByRole('button', { name: /^send$/i }).click();
+
+		const card = page.locator('.react-flow__node-audio');
+		await expect(card).toBeVisible({ timeout: 10_000 });
+		await expect(card.getByRole('button', { name: /play voice note/i })).toBeVisible();
+	});
+
 	test('authors can take their things back off the board', async ({ page }) => {
 		await registerOntoCanvas(page);
 		await dropNote(page, 'a fleeting thought');

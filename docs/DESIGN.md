@@ -81,6 +81,7 @@ The physical identity of each item type — keep them distinct and true:
 | Image | Photo print | White polaroid frame + deeper chin, sized to the photo's aspect ratio (never clipped; extreme ratios gently clamped), blurhash bloom on load |
 | Emoji | Sticker | Oversized glyph, drop shadow, nothing else; silent — no back, no thread, no reactions. (Die-cut pads were tried and cut: too heavy.) |
 | Drawing | Pencil stroke | Free strokes in one palette color, floating directly on the paper; silent like stickers |
+| Voice note | Speaking slip | Paper pill: round play button, static waveform (played bars in ink), mono duration; under a minute. *(Seed: auto-transcript, expandable for when listening isn't possible.)* |
 
 Card backs are the postmark side: author, time (meta voice), the small thread (hand voice), reactions.
 

@@ -1,7 +1,7 @@
 import type { NodeProps } from '@xyflow/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ArrowUpRightIcon, ChatIcon, XIcon } from '~/components/icons';
+import { ArrowUpRightIcon, ChatIcon, PauseIcon, PlayIcon, XIcon } from '~/components/icons';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, seededTone } from '~/lib/design';
@@ -161,6 +161,126 @@ export function StickerNode({ data }: BoardNodeProps) {
 					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
 				</div>
 			}
+		/>
+	);
+}
+
+type AudioMeta = { duration: number; peaks: number[] };
+
+function parseAudioMeta(raw: string | null): AudioMeta {
+	try {
+		const parsed = JSON.parse(raw ?? '');
+		if (parsed.duration > 0) {
+			return {
+				duration: parsed.duration,
+				peaks: Array.isArray(parsed.peaks) && parsed.peaks.length > 0 ? parsed.peaks : [],
+			};
+		}
+	} catch {
+		// fall through
+	}
+	return { duration: 0, peaks: [] };
+}
+
+function clock(seconds: number): string {
+	const s = Math.max(0, Math.round(seconds));
+	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+const FLAT_PEAKS = Array.from({ length: 40 }, () => 0.35);
+
+/** The static waveform: played bars in ink, the rest faint. */
+function Waveform({ peaks, progress }: { peaks: number[]; progress: number }) {
+	const bars = peaks.length > 0 ? peaks : FLAT_PEAKS;
+	const played = Math.floor(progress * bars.length);
+	return (
+		<svg
+			className="h-9 min-w-0 flex-1"
+			viewBox={`0 0 ${bars.length * 3} 36`}
+			preserveAspectRatio="none"
+			aria-hidden
+		>
+			{bars.map((peak, index) => {
+				const height = Math.max(4, peak * 30);
+				return (
+					<rect
+						key={`${index}-${peak}`}
+						x={index * 3}
+						y={18 - height / 2}
+						width={1.8}
+						height={height}
+						rx={0.9}
+						fill={index < played ? 'var(--color-ink)' : 'var(--color-ink-faint)'}
+					/>
+				);
+			})}
+		</svg>
+	);
+}
+
+/** Voice note → a slip of paper that speaks: play, waveform, duration. */
+export function AudioNode({ data }: BoardNodeProps) {
+	const { item, currentUserId, frozen } = data;
+	const [flipped, setFlipped] = useFlip();
+	const [playing, setPlaying] = useState(false);
+	const [progress, setProgress] = useState(0);
+	const audioRef = useRef<HTMLAudioElement>(null);
+	const meta = parseAudioMeta(item.text);
+	const src = item.assets.find((asset) => asset.kind === 'original')?.url ?? null;
+	const size = ITEM_SIZES.audio;
+
+	return (
+		<FlipCard
+			width={size.w}
+			height={size.h}
+			rotation={item.rotation}
+			flipped={flipped}
+			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			onToggle={() => setFlipped((f) => !f)}
+			front={
+				<div className="flex h-full w-full items-center gap-3 rounded-lg border border-line bg-card px-3.5 shadow-card">
+					{src ? (
+						// biome-ignore lint/a11y/useMediaCaption: short voice notes; transcript is a seed
+						<audio
+							ref={audioRef}
+							src={src}
+							preload="metadata"
+							onPlay={() => setPlaying(true)}
+							onPause={() => setPlaying(false)}
+							onEnded={() => {
+								setPlaying(false);
+								setProgress(0);
+							}}
+							onTimeUpdate={(event) => {
+								const el = event.currentTarget;
+								setProgress(el.duration > 0 ? el.currentTime / el.duration : 0);
+							}}
+						/>
+					) : null}
+					<button
+						type="button"
+						data-noflip
+						aria-label={playing ? 'Pause voice note' : 'Play voice note'}
+						onClick={() => {
+							const el = audioRef.current;
+							if (!el) return;
+							if (el.paused) void el.play();
+							else el.pause();
+						}}
+						className="nodrag grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-deep text-ink transition hover:bg-line"
+					>
+						{playing ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="ml-0.5 h-4 w-4" />}
+					</button>
+					<Waveform peaks={meta.peaks} progress={progress} />
+					<span className="shrink-0 font-mono text-[11px] text-ink-soft tracking-wider">
+						{clock(meta.duration)}
+					</span>
+				</div>
+			}
+			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
 		/>
 	);
 }

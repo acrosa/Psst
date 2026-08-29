@@ -13,6 +13,7 @@ import { getBoardItems, getOrCreateTodayCanvas } from '~/lib/services/canvases.s
 import { createInvite } from '~/lib/services/invites.server';
 import {
 	addComment,
+	createAudioItem,
 	createImageItem,
 	createItem,
 	deleteItem,
@@ -95,6 +96,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 					userId: user.id,
 					kind,
 					content: String(formData.get('content') ?? ''),
+					position: parsePosition(formData),
+				});
+				return { ok: true };
+			}
+			case 'create-audio': {
+				const audio = formData.get('file');
+				if (!(audio instanceof File) || audio.size === 0) {
+					return { error: 'Record something first.' };
+				}
+				await createAudioItem({
+					spaceId: params.spaceId,
+					userId: user.id,
+					file: audio,
+					meta: String(formData.get('content') ?? ''),
 					position: parsePosition(formData),
 				});
 				return { ok: true };

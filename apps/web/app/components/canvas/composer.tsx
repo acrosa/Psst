@@ -1,7 +1,7 @@
 import { useReactFlow } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ImageIcon, PencilIcon, SmileIcon, SpinnerIcon, XIcon } from '~/components/icons';
+import { ImageIcon, MicIcon, PencilIcon, SmileIcon, SpinnerIcon, XIcon } from '~/components/icons';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, STICKER_EMOJIS } from '~/lib/design';
@@ -31,6 +31,21 @@ export function Composer() {
 	const [color, setColor] = useState(PENCIL_COLORS[0]);
 	const [strokes, setStrokes] = useState<Stroke[]>([]);
 	const settleTimer = useRef<number | null>(null);
+	const audioFetcher = useFetcher<{ error?: string }>();
+	const [recording, setRecording] = useState(false);
+	const [elapsed, setElapsed] = useState(0);
+	const [micError, setMicError] = useState<string | null>(null);
+	const recRef = useRef<{
+		recorder: MediaRecorder;
+		stream: MediaStream;
+		timer: number;
+		cancelled: boolean;
+	} | null>(null);
+
+	// Voice notes stay short: a minute, then the recorder puts itself down.
+	useEffect(() => {
+		if (recording && elapsed >= 60) recRef.current?.recorder.stop();
+	}, [recording, elapsed]);
 
 	const submitting = fetcher.state !== 'idle';
 	const uploading = photoFetcher.state !== 'idle';
@@ -130,6 +145,88 @@ export function Composer() {
 		return () => window.removeEventListener('keydown', onKey);
 	});
 
+	/** Peak samples for the static waveform, computed once at save time. */
+	async function waveformMeta(blob: Blob, fallbackSeconds: number) {
+		try {
+			const ctx = new AudioContext();
+			const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+			void ctx.close();
+			const channel = buffer.getChannelData(0);
+			const BARS = 40;
+			const block = Math.max(1, Math.floor(channel.length / BARS));
+			const peaks = Array.from({ length: BARS }, (_, i) => {
+				let max = 0;
+				for (let j = i * block; j < Math.min((i + 1) * block, channel.length); j++) {
+					const value = Math.abs(channel[j]);
+					if (value > max) max = value;
+				}
+				return max;
+			});
+			const top = Math.max(...peaks, 0.01);
+			return {
+				duration: Math.round(buffer.duration * 10) / 10,
+				peaks: peaks.map((p) => Math.round((p / top) * 100) / 100),
+			};
+		} catch {
+			return { duration: Math.max(1, fallbackSeconds), peaks: [] };
+		}
+	}
+
+	async function startRecording() {
+		setMicError(null);
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+				? 'audio/webm;codecs=opus'
+				: MediaRecorder.isTypeSupported('audio/mp4')
+					? 'audio/mp4'
+					: undefined;
+			const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+			const chunks: Blob[] = [];
+			recorder.ondataavailable = (event) => {
+				if (event.data.size > 0) chunks.push(event.data);
+			};
+			recorder.onstop = () => {
+				for (const track of stream.getTracks()) track.stop();
+				const state = recRef.current;
+				if (state) window.clearInterval(state.timer);
+				const cancelled = state?.cancelled ?? false;
+				recRef.current = null;
+				setRecording(false);
+				const seconds = elapsedRef.current;
+				setElapsed(0);
+				if (cancelled || chunks.length === 0) return;
+				void (async () => {
+					const type = (recorder.mimeType || 'audio/webm').split(';')[0];
+					const blob = new Blob(chunks, { type });
+					const meta = await waveformMeta(blob, seconds);
+					const formData = new FormData();
+					formData.set('intent', 'create-audio');
+					formData.set('file', new File([blob], 'voice', { type }));
+					formData.set('content', JSON.stringify(meta));
+					const at = inViewPlacement('audio');
+					formData.set('x', at.x);
+					formData.set('y', at.y);
+					audioFetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
+				})();
+			};
+			recRef.current = {
+				recorder,
+				stream,
+				cancelled: false,
+				timer: window.setInterval(() => setElapsed((s) => s + 1), 1000),
+			};
+			recorder.start();
+			setElapsed(0);
+			setRecording(true);
+		} catch {
+			setMicError('The microphone stayed quiet — check permissions?');
+		}
+	}
+
+	const elapsedRef = useRef(0);
+	elapsedRef.current = elapsed;
+
 	const iconButton =
 		'grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-paper-deep hover:text-ink disabled:opacity-50';
 
@@ -139,9 +236,15 @@ export function Composer() {
 
 			<div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-3 sm:bottom-6 sm:px-6">
 				<div className="pointer-events-auto w-full max-w-2xl">
-					{fetcher.data?.error || photoFetcher.data?.error ? (
+					{fetcher.data?.error ||
+					photoFetcher.data?.error ||
+					audioFetcher.data?.error ||
+					micError ? (
 						<p className="mb-2.5 rounded-lg bg-accent-soft px-3 py-1.5 text-center text-accent-deep text-sm shadow-card">
-							{fetcher.data?.error ?? photoFetcher.data?.error}
+							{fetcher.data?.error ??
+								photoFetcher.data?.error ??
+								audioFetcher.data?.error ??
+								micError}
 						</p>
 					) : null}
 
@@ -174,7 +277,37 @@ export function Composer() {
 						</div>
 					) : null}
 
-					{drawing ? (
+					{recording ? (
+						<div className="flex items-center gap-3 rounded-full border border-line bg-card px-4 py-2 shadow-lift">
+							<span className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent" aria-hidden />
+							<span className="font-mono text-ink text-sm tracking-wider">
+								0:{String(elapsed).padStart(2, '0')}
+							</span>
+							<span className="flex-1 text-center font-serif text-ink-soft text-sm italic">
+								recording — up to a minute…
+							</span>
+							<button
+								type="button"
+								aria-label="Discard recording"
+								onClick={() => {
+									if (recRef.current) {
+										recRef.current.cancelled = true;
+										recRef.current.recorder.stop();
+									}
+								}}
+								className={iconButton}
+							>
+								<XIcon className="h-[18px] w-[18px]" />
+							</button>
+							<Button
+								size="sm"
+								className="rounded-full"
+								onClick={() => recRef.current?.recorder.stop()}
+							>
+								Send
+							</Button>
+						</div>
+					) : drawing ? (
 						<div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 shadow-lift">
 							<span className="flex items-center gap-1.5">
 								{PENCIL_COLORS.map((option) => (
@@ -244,6 +377,21 @@ export function Composer() {
 								className={iconButton}
 							>
 								<PencilIcon className="h-[18px] w-[18px]" />
+							</button>
+							<button
+								type="button"
+								aria-label="Record a voice note"
+								onClick={() => {
+									setTrayOpen(false);
+									void startRecording();
+								}}
+								className={iconButton}
+							>
+								{audioFetcher.state !== 'idle' ? (
+									<SpinnerIcon className="h-[18px] w-[18px] animate-spin" />
+								) : (
+									<MicIcon className="h-[18px] w-[18px]" />
+								)}
 							</button>
 							<input
 								ref={fileRef}
