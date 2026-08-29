@@ -148,6 +148,17 @@ export const canvases = sqliteTable(
 	(t) => [unique('canvases_space_date_unique').on(t.spaceId, t.date)],
 );
 
+export const pushDevices = sqliteTable('push_devices', {
+	id: uuidPk(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	token: text('token').notNull().unique(),
+	platform: text('platform').notNull().default('ios'),
+	createdAt: createdAt().notNull(),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 export const items = sqliteTable(
 	'items',
 	{

@@ -1,10 +1,15 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { bearer } from 'better-auth/plugins';
 import { redirect } from 'react-router';
 import { db, schema, useSqlite } from './db/client.server';
 import { env } from './env.server';
 
 export const auth = betterAuth({
+	// Bearer lets native clients (iOS) authenticate with the token from the
+	// set-auth-token response header instead of cookies.
+	plugins: [bearer()],
+
 	database: drizzleAdapter(db, {
 		provider: useSqlite ? 'sqlite' : 'pg',
 		schema: {
@@ -34,6 +39,11 @@ export const auth = betterAuth({
 					apple: {
 						clientId: env.APPLE_CLIENT_ID,
 						clientSecret: env.APPLE_CLIENT_SECRET,
+						// Native Sign in with Apple: idTokens minted for the iOS app
+						// carry the bundle id as audience.
+						...(env.APPLE_APP_BUNDLE_IDENTIFIER
+							? { appBundleIdentifier: env.APPLE_APP_BUNDLE_IDENTIFIER }
+							: {}),
 					},
 				}
 			: {}),

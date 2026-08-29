@@ -24,6 +24,7 @@
 		"@react-router/node": "^7.9.2",
 		"@react-router/serve": "^7.9.2",
 		"@xyflow/react": "^12.8.0",
+		"apns2": "^12.2.0",
 		"better-auth": "~1.4.1",
 		"better-sqlite3": "^12.5.0",
 		"blurhash": "^2.0.5",

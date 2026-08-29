@@ -136,6 +136,17 @@ export const canvases = pgTable(
 	(t) => [unique('canvases_space_date_unique').on(t.spaceId, t.date)],
 );
 
+export const pushDevices = pgTable('push_devices', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	token: text('token').notNull().unique(),
+	platform: text('platform').notNull().default('ios'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const items = pgTable(
 	'items',
 	{

@@ -19,6 +19,8 @@ export default [
 	// API
 	route('api/auth/*', 'routes/api.auth.$.ts'),
 	route('api/profile', 'routes/api.profile.ts'),
+	route('api/devices', 'routes/api.devices.ts'),
+	route('api/board', 'routes/api.board.ts'),
 	route('auth/continue', 'routes/auth.continue.ts'),
 	route('health', 'routes/health.ts'),
 	route('files/*', 'routes/files.$.ts'),

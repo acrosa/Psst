@@ -23,6 +23,15 @@ const schema = z.object({
 	APPLE_CLIENT_SECRET: z.string().optional(),
 	// Comma-separated origins allowed to hit auth (e.g. a tailnet URL in dev)
 	EXTRA_TRUSTED_ORIGINS: z.string().optional(),
+	// Native Sign in with Apple (iOS app bundle id, e.g. you.psst.app)
+	APPLE_APP_BUNDLE_IDENTIFIER: z.string().optional(),
+
+	// Push notifications (APNs, token-based auth) — no-ops when unset
+	APNS_TEAM_ID: z.string().optional(),
+	APNS_KEY_ID: z.string().optional(),
+	APNS_PRIVATE_KEY: z.string().optional(),
+	APNS_BUNDLE_ID: z.string().optional(),
+	APNS_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
 
 	// Jobs: inline (default, no worker needed) or queue (pg-boss + `pnpm worker`)
 	JOBS_MODE: z.enum(['inline', 'queue']).default('inline'),
