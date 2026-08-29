@@ -108,7 +108,7 @@ export function PostcardNode({ data }: BoardNodeProps) {
 }
 
 /** A torn-paper outline: straight-ish edges with a seeded deckle. */
-function tornEdge(seed: string, width: number, height: number): string {
+export function tornEdge(seed: string, width: number, height: number): string {
 	let hash = 0;
 	for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 100000;
 	const rand = () => {
