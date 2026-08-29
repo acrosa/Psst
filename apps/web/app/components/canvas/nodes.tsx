@@ -141,7 +141,38 @@ export function SlipNode({ data }: BoardNodeProps) {
 	);
 }
 
-/** Emoji → oversized sticker. Stickers stay silent: no back, no thread. */
+/**
+ * A hand-cut sticker backing: a circle with a gently irregular edge, seeded
+ * per item so no two cuts are identical.
+ */
+function stickerCut(seed: string): string {
+	let hash = 0;
+	for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 100000;
+	const rand = () => {
+		hash = (hash * 9301 + 49297) % 233280;
+		return hash / 233280;
+	};
+	const POINTS = 22;
+	const pts: Array<[number, number]> = [];
+	for (let i = 0; i < POINTS; i++) {
+		const angle = (i / POINTS) * Math.PI * 2;
+		const radius = 45 + rand() * 3.6 - 1.8;
+		pts.push([50 + Math.cos(angle) * radius, 50 + Math.sin(angle) * radius]);
+	}
+	const mid = (a: [number, number], b: [number, number]) => [
+		((a[0] + b[0]) / 2).toFixed(1),
+		((a[1] + b[1]) / 2).toFixed(1),
+	];
+	let d = `M ${mid(pts[POINTS - 1], pts[0]).join(' ')}`;
+	for (let i = 0; i < POINTS; i++) {
+		const p = pts[i];
+		const m = mid(p, pts[(i + 1) % POINTS]);
+		d += ` Q ${p[0].toFixed(1)} ${p[1].toFixed(1)} ${m.join(' ')}`;
+	}
+	return `${d} Z`;
+}
+
+/** Emoji → die-cut sticker: the glyph on a white hand-cut pad. Silent. */
 export function StickerNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const size = ITEM_SIZES.emoji;
@@ -157,8 +188,17 @@ export function StickerNode({ data }: BoardNodeProps) {
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onToggle={() => {}}
 			front={
-				<div className="group/sticker grid h-full w-full place-items-center text-7xl [filter:drop-shadow(0_6px_10px_rgb(64_56_47/0.18))]">
-					<span>{item.text}</span>
+				<div className="group/sticker relative h-full w-full">
+					<svg
+						viewBox="0 0 100 100"
+						className="absolute inset-0 h-full w-full [filter:drop-shadow(0_4px_8px_rgb(64_56_47/0.2))]"
+						aria-hidden
+					>
+						<path d={stickerCut(item.id)} fill="var(--color-card)" />
+					</svg>
+					<span className="absolute inset-0 grid place-items-center text-[62px] leading-none">
+						{item.text}
+					</span>
 					<HoverDelete item={item} currentUserId={currentUserId} frozen={frozen} />
 				</div>
 			}

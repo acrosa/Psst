@@ -79,7 +79,7 @@ The physical identity of each item type — keep them distinct and true:
 | Link | Postcard | Unfurl image, scallop-perforated stamp (`accent`, SVG mask), VISIT pill, favicon + site in meta voice |
 | Note | Paper slip | Seeded pastel tone, hand voice, slight rotation |
 | Image | Photo print | White polaroid frame + deeper chin, sized to the photo's aspect ratio (never clipped; extreme ratios gently clamped), blurhash bloom on load |
-| Emoji | Sticker | Oversized glyph, drop shadow, nothing else; silent — no back, no thread, no reactions. (Die-cut pads were tried and cut: too heavy.) |
+| Emoji | Die-cut sticker | The glyph on a white hand-cut circular pad — edge gently irregular, seeded per item — with a soft shadow; silent — no back, no thread, no reactions |
 | Drawing | Pencil stroke | Free strokes in one palette color, floating directly on the paper; silent like stickers |
 | Voice note | Speaking slip | Paper pill: round play button, static waveform (played bars in ink), mono duration; under a minute. *(Seed: auto-transcript, expandable for when listening isn't possible.)* |
 
@@ -104,7 +104,7 @@ Lowercase whispers, warm and brief: "psst — drop something here", "tucking it 
 - `ios app` / `ios signup welcome` — quiet mobile canvas; one-CTA sheet *(shipped: social-first auth; the pastel-backdrop sheet was tried and cut — decoration lost to minimalism)*
 - `organize shared items 1–2` — collections as shelves/folders *(concept seed: space items view)*
 - `scroll timeline 1–2` — tick-rail scrollbar *(shipped: the scrapbook rail)*
-- `stickers idea (border)` — die-cut white borders *(tried, cut — too heavy for the board)*
+- `stickers idea (border)` — die-cut white borders *(shipped: seeded hand-cut pads)*
 - `type font` — display type as a single confident gesture
 
 Concept seeds are directions the inspiration points at — not commitments. Each ships only when it can be perfect.
