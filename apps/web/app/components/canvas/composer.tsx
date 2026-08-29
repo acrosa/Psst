@@ -247,7 +247,10 @@ export function Composer() {
 		<>
 			{drawing ? <DrawLayer color={color} strokes={strokes} onStroke={addStroke} /> : null}
 
-			<div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-5 sm:bottom-5 sm:px-6">
+			<div
+				className="pointer-events-none absolute inset-x-0 z-30 flex justify-center px-5 sm:px-6"
+				style={{ bottom: 'max(0.875rem, calc(env(safe-area-inset-bottom) + 0.5rem))' }}
+			>
 				<div className="pointer-events-auto w-full max-w-2xl">
 					{fetcher.data?.error ||
 					photoFetcher.data?.error ||

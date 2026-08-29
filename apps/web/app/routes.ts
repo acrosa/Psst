@@ -23,6 +23,7 @@ export default [
 	route('api/board', 'routes/api.board.ts'),
 	route('auth/continue', 'routes/auth.continue.ts'),
 	route('health', 'routes/health.ts'),
+	route('.well-known/apple-app-site-association', 'routes/aasa.ts'),
 	route('files/*', 'routes/files.$.ts'),
 
 	// Dev/test-only OpenGraph fixture for exercising the unfurl pipeline locally
