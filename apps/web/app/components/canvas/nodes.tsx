@@ -131,11 +131,20 @@ function tornEdge(seed: string, width: number, height: number): string {
 		.join(' L ')} Z`;
 }
 
+/** Scraps tear to size: a few words get a slim strip, a paragraph a page. */
+function slipSize(text: string | null) {
+	const length = text?.length ?? 0;
+	const w = ITEM_SIZES.note.w;
+	if (length <= 60) return { w, h: 120 };
+	if (length <= 160) return { w, h: 164 };
+	return { w, h: ITEM_SIZES.note.h };
+}
+
 /** Note → a torn paper scrap taped to the board, spoken in typewriter. */
 export function SlipNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const [flipped, setFlipped] = useFlip();
-	const size = ITEM_SIZES.note;
+	const size = slipSize(item.text);
 
 	return (
 		<FlipCard
