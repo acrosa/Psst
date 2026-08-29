@@ -33,8 +33,11 @@ R2 is required on Vercel — serverless functions have no persistent disk — an
    ```bash
    DATABASE_URL=postgres://…pooler.supabase.com:6543/postgres   # transaction pooler
    BETTER_AUTH_SECRET=<openssl rand -base64 32>
-   BETTER_AUTH_URL=https://your-domain.com
-   APP_URL=https://your-domain.com
+   # The canonical host is www — the apex 308-redirects there, and better-auth
+   # rejects sign-in POSTs whose Origin isn't trusted. Keep the apex trusted too.
+   BETTER_AUTH_URL=https://www.psst.you
+   APP_URL=https://www.psst.you
+   EXTRA_TRUSTED_ORIGINS=https://psst.you
 
    S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
    S3_REGION=auto
@@ -45,7 +48,7 @@ R2 is required on Vercel — serverless functions have no persistent disk — an
 
    # optional
    RESEND_API_KEY=…                              # invite emails (console-logged without it)
-   EMAIL_FROM=psst <hello@your-domain.com>
+   EMAIL_FROM=psst <hello@psst.you>
    GOOGLE_CLIENT_ID=…
    GOOGLE_CLIENT_SECRET=…
    APPLE_CLIENT_ID=…
@@ -56,12 +59,107 @@ R2 is required on Vercel — serverless functions have no persistent disk — an
 
 4. **Deploy**, then point your domain at the project (Vercel → Domains).
 
-## 4 · OAuth callbacks (if using social sign-in)
+## 4 · Google sign-in
 
-- Google Cloud Console → your OAuth client → authorized redirect URI:
-  `https://your-domain.com/api/auth/callback/google`
-- Apple Developer → Services ID → return URL:
-  `https://your-domain.com/api/auth/callback/apple`
+The app enables the Google button automatically when both `GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_SECRET` are present.
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+2. Open **Google Auth Platform → Branding** and configure:
+   - App name and support email.
+   - Your production home page.
+   - Privacy policy and terms URLs if the app is public.
+   - Your domain under authorized domains.
+3. Open **Audience**:
+   - Choose **External** to allow ordinary Google accounts.
+   - While the app is in testing, add each person who should be able to sign in as a test user.
+   - Publish the app when it is ready for general use. Basic sign-in only requests
+     `openid`, `email`, and `profile`; adding other Google scopes may require additional verification.
+4. Open **Clients → Create client → Web application**.
+5. Add the production origin under **Authorized JavaScript origins**:
+
+   ```text
+   https://www.psst.you
+   https://psst.you
+   ```
+
+6. Add this exact **Authorized redirect URI** (no trailing slash):
+
+   ```text
+   https://www.psst.you/api/auth/callback/google
+   ```
+
+7. Copy the generated credentials into Vercel Production environment variables:
+
+   ```text
+   GOOGLE_CLIENT_ID=<client-id ending in .apps.googleusercontent.com>
+   GOOGLE_CLIENT_SECRET=<client-secret>
+   ```
+
+8. Redeploy the Production deployment, open `/login`, and test **Continue with Google** in a
+   private browser window.
+
+For local Google sign-in, add `http://localhost:3000` as another JavaScript origin and
+`http://localhost:3000/api/auth/callback/google` as another redirect URI. A
+`redirect_uri_mismatch` error means the URI Google received does not exactly match one in the
+client configuration; check the scheme, domain, path, and trailing slash. See the
+[Better Auth Google guide](https://better-auth.com/docs/authentication/google) and
+[Google's web-server OAuth guide](https://developers.google.com/identity/protocols/oauth2/web-server).
+
+## 5 · Apple sign-in
+
+Apple web sign-in requires an active Apple Developer Program membership. The app enables the
+Apple button automatically when both `APPLE_CLIENT_ID` and `APPLE_CLIENT_SECRET` are present.
+
+1. Open [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list).
+2. Under **Identifiers**, create an **App ID** using a reverse-domain Bundle ID such as
+   `you.psst`. Enable **Sign in with Apple** and make it the primary App ID.
+3. Create a **Services ID** with a different identifier, such as `you.psst.web`. The
+   Services ID—not the App ID—is the web OAuth client ID.
+4. Open the Services ID, enable **Sign in with Apple**, and select **Configure**:
+   - **Primary App ID:** the App ID created above.
+   - **Domains and Subdomains:** `www.psst.you` without `https://` or a path.
+   - **Return URL:** `https://www.psst.you/api/auth/callback/apple`.
+   - Save the configuration and the Services ID.
+5. Under **Keys**, create a key with **Sign in with Apple** enabled and associate it with the
+   primary App ID. Download the `.p8` private key immediately; Apple only allows one download.
+6. Record these values:
+   - **Client ID:** the Services ID, for example `you.psst.web`.
+   - **Team ID:** shown in Apple Developer membership details.
+   - **Key ID:** shown on the key details page.
+   - **Private key:** the downloaded `.p8` file.
+7. Generate an ES256 Apple client-secret JWT using those four values. The JWT must use:
+   - Header: `alg=ES256` and `kid=<Key ID>`.
+   - Claims: `iss=<Team ID>`, `sub=<Services ID>`, and
+     `aud=https://appleid.apple.com`.
+   - An expiration no more than six months in the future.
+
+   The [Better Auth Apple guide](https://better-auth.com/docs/authentication/apple#generate-apple-client-secret-jwt)
+   includes a `jose` example for generating the JWT. This app currently accepts the generated
+   JWT as a static Vercel secret, so record its expiration date and replace it before it expires.
+8. Add the values to Vercel Production environment variables:
+
+   ```text
+   APPLE_CLIENT_ID=you.psst.web
+   APPLE_CLIENT_SECRET=<generated-client-secret-jwt>
+   ```
+
+9. Confirm the shared auth settings still use the same production origin:
+
+   ```text
+   BETTER_AUTH_URL=https://www.psst.you
+   APP_URL=https://www.psst.you
+   EXTRA_TRUSTED_ORIGINS=https://psst.you
+   ```
+
+10. Redeploy the Production deployment, open `/login`, and test **Continue with Apple** in a
+    private browser window.
+
+Apple does not accept `localhost`, plain HTTP, IP addresses, wildcard domains, or Vercel preview
+URLs as web return URLs. Test Apple sign-in on the stable production HTTPS domain. The app already
+trusts `https://appleid.apple.com`, which Apple needs because its callback uses an HTTP POST. See
+Apple's guides for [web configuration](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web)
+and [private-key creation](https://developer.apple.com/help/account/capabilities/create-a-sign-in-with-apple-private-key).
 
 ## Checklist
 
@@ -70,4 +168,8 @@ R2 is required on Vercel — serverless functions have no persistent disk — an
 - [ ] Migrations ran against Supabase (`pnpm db:migrate` with the session-pooler string)
 - [ ] Drop a photo — it lands in R2 and gets a thumbnail
 - [ ] Invite email arrives (or you're consciously in console-log mode)
-- [ ] OAuth redirect URIs registered for the prod domain
+- [ ] Google OAuth client uses the exact production origin and callback URI
+- [ ] Google audience is published, or every intended user is listed as a test user
+- [ ] Apple Services ID uses the production domain and callback URI
+- [ ] Apple client-secret expiration is recorded for rotation before six months
+- [ ] Vercel was redeployed after adding OAuth environment variables
