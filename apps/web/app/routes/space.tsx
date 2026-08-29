@@ -233,20 +233,27 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						mobileOnly: true,
 					},
 					{ label: 'Space settings', to: `/spaces/${space.id}/settings`, icon: 'settings' },
+					{ label: 'Your spaces', to: '/spaces', icon: 'spaces' },
 				]}
 			>
 				<div className="flex min-w-0 items-center gap-2 sm:gap-3">
-					<span className="shrink-0 text-xl sm:text-2xl" aria-hidden>
-						{space.emoji}
-					</span>
-					<div className="min-w-0">
-						<div className="truncate font-medium text-sm leading-tight sm:text-base">
-							{space.name}
+					{/* The space's own name is the way back to all of them. */}
+					<Link
+						to="/spaces"
+						className="-mx-1.5 -my-1 flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition hover:bg-paper-deep sm:gap-3"
+					>
+						<span className="shrink-0 text-xl sm:text-2xl" aria-hidden>
+							{space.emoji}
+						</span>
+						<div className="min-w-0">
+							<div className="truncate font-medium text-sm leading-tight sm:text-base">
+								{space.name}
+							</div>
+							<div className="hidden truncate text-ink-faint text-xs leading-tight sm:block">
+								Today · {formatDay(board.date)}
+							</div>
 						</div>
-						<div className="hidden truncate text-ink-faint text-xs leading-tight sm:block">
-							Today · {formatDay(board.date)}
-						</div>
-					</div>
+					</Link>
 					<span className="hidden shrink-0 sm:block">
 						<Button size="sm" onClick={() => setInviting(true)}>
 							Invite

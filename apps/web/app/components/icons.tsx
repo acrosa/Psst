@@ -20,6 +20,7 @@ export {
 	Plus as PlusIcon,
 	Play as PlayIcon,
 	CornerUpLeft as FlipBackIcon,
+	LayoutGrid as SpacesIcon,
 	Settings2 as SettingsIcon,
 	Pencil as PencilIcon,
 	Smile as SmileIcon,

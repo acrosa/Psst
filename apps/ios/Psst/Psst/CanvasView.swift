@@ -8,9 +8,11 @@ struct CanvasView: View {
 	@Environment(AppState.self) private var appState
 
 	var body: some View {
-		CanvasWebView(pendingSpaceId: appState.pendingSpaceId) {
-			appState.pendingSpaceId = nil
-		}
+		CanvasWebView(
+			pendingSpaceId: appState.pendingSpaceId,
+			onNavigatedToPending: { appState.pendingSpaceId = nil },
+			onSessionExpired: { appState.signOut() },
+		)
 		.ignoresSafeArea(edges: .bottom)
 		.background(PsstColor.paper)
 		.task {
@@ -23,8 +25,9 @@ struct CanvasView: View {
 struct CanvasWebView: UIViewRepresentable {
 	let pendingSpaceId: String?
 	let onNavigatedToPending: () -> Void
+	let onSessionExpired: () -> Void
 
-	func makeCoordinator() -> Coordinator { Coordinator() }
+	func makeCoordinator() -> Coordinator { Coordinator(onSessionExpired: onSessionExpired) }
 
 	func makeUIView(context: Context) -> WKWebView {
 		let configuration = WKWebViewConfiguration()
@@ -42,22 +45,35 @@ struct CanvasWebView: UIViewRepresentable {
 		#endif
 
 		// Sign the webview in: the bearer token is the session cookie value.
+		// The name depends on how the server sees its own scheme (an https
+		// proxy in front of an http dev server uses the unprefixed name), so
+		// set both and let it read the one it knows.
 		let base = Config.baseURL
 		let target = base.appending(path: "/spaces")
 		let secure = base.scheme == "https"
-		if let value = SessionStore.bearerToken,
-			let cookie = HTTPCookie(properties: [
-				.name: secure ? "__Secure-better-auth.session_token" : "better-auth.session_token",
-				.value: value,
-				.domain: base.host() ?? "",
-				.path: "/",
-				.secure: secure ? "TRUE" : "FALSE",
-			])
-		{
-			webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) {
-				webView.load(URLRequest(url: target))
+		let cookies: [HTTPCookie]
+		if let value = SessionStore.bearerToken {
+			var names = ["better-auth.session_token"]
+			if secure { names.append("__Secure-better-auth.session_token") }
+			cookies = names.compactMap { name in
+				HTTPCookie(properties: [
+					.name: name,
+					.value: value,
+					.domain: base.host() ?? "",
+					.path: "/",
+					.secure: secure ? "TRUE" : "FALSE",
+				])
 			}
 		} else {
+			cookies = []
+		}
+		let store = webView.configuration.websiteDataStore.httpCookieStore
+		let group = DispatchGroup()
+		for cookie in cookies {
+			group.enter()
+			store.setCookie(cookie) { group.leave() }
+		}
+		group.notify(queue: .main) {
 			webView.load(URLRequest(url: target))
 		}
 		return webView
@@ -72,6 +88,13 @@ struct CanvasWebView: UIViewRepresentable {
 	}
 
 	final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+		private let onSessionExpired: () -> Void
+		private var expired = false
+
+		init(onSessionExpired: @escaping () -> Void) {
+			self.onSessionExpired = onSessionExpired
+		}
+
 		/// Keep navigation on psst; hand external links to the system.
 		func webView(
 			_ webView: WKWebView,
@@ -83,6 +106,16 @@ struct CanvasWebView: UIViewRepresentable {
 				return
 			}
 			if host == Config.baseURL.host() {
+				// Bounced to the web login: the session died — the native
+				// login is the front door, not a form inside the webview.
+				if url.path() == "/login" || url.path().hasPrefix("/login") {
+					decisionHandler(.cancel)
+					if !expired {
+						expired = true
+						onSessionExpired()
+					}
+					return
+				}
 				decisionHandler(.allow)
 			} else {
 				decisionHandler(.cancel)
