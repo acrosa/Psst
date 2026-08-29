@@ -53,6 +53,16 @@ export default function Home() {
 					Sign in
 				</Link>
 			</div>
+
+			<p className="text-ink-faint text-xs">
+				<Link to="/privacy" className="transition hover:text-ink-soft">
+					Privacy
+				</Link>
+				{' · '}
+				<Link to="/terms" className="transition hover:text-ink-soft">
+					Terms
+				</Link>
+			</p>
 		</main>
 	);
 }

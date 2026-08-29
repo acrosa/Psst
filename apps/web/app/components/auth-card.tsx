@@ -21,6 +21,15 @@ export function AuthCard({
 			<h1 className="mt-10 font-serif text-3xl leading-tight">{title}</h1>
 			{subtitle ? <p className="mt-2 text-ink-soft text-sm">{subtitle}</p> : null}
 			<div className="mt-8">{children}</div>
+			<p className="mt-10 text-ink-faint text-xs">
+				<Link to="/privacy" className="transition hover:text-ink-soft">
+					Privacy
+				</Link>
+				{' · '}
+				<Link to="/terms" className="transition hover:text-ink-soft">
+					Terms
+				</Link>
+			</p>
 		</main>
 	);
 }

@@ -6,6 +6,8 @@ export default [
 	route('login', 'routes/login.tsx'),
 	route('register', 'routes/register.tsx'),
 	route('logout', 'routes/logout.tsx'),
+	route('privacy', 'routes/privacy.tsx'),
+	route('terms', 'routes/terms.tsx'),
 
 	// App
 	route('onboarding', 'routes/onboarding.tsx'),

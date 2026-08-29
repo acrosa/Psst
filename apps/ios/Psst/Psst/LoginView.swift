@@ -93,6 +93,15 @@ struct LoginView: View {
 				.tint(PsstColor.accent)
 				.disabled(busy || email.isEmpty || password.isEmpty || (registering && name.isEmpty))
 				.padding(.top, 24)
+
+				HStack(spacing: 4) {
+					Link("Privacy", destination: URL(string: "https://www.psst.you/privacy")!)
+					Text("·")
+					Link("Terms", destination: URL(string: "https://www.psst.you/terms")!)
+				}
+				.font(.caption)
+				.foregroundStyle(PsstColor.inkFaint)
+				.padding(.top, 40)
 			}
 			.padding(.horizontal, 28)
 			.padding(.vertical, 56)
