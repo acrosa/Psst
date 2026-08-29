@@ -189,28 +189,29 @@ function clock(seconds: number): string {
 
 const FLAT_PEAKS = Array.from({ length: 40 }, () => 0.35);
 
-/** The static waveform: played bars in ink, the rest faint. */
+/** The waveform at rest is all ink; playback leaves the road ahead faint. */
 function Waveform({ peaks, progress }: { peaks: number[]; progress: number }) {
 	const bars = peaks.length > 0 ? peaks : FLAT_PEAKS;
 	const played = Math.floor(progress * bars.length);
 	return (
 		<svg
-			className="h-9 min-w-0 flex-1"
-			viewBox={`0 0 ${bars.length * 3} 36`}
+			className="h-8 min-w-0 flex-1"
+			viewBox={`0 0 ${bars.length * 3} 32`}
 			preserveAspectRatio="none"
 			aria-hidden
 		>
 			{bars.map((peak, index) => {
-				const height = Math.max(4, peak * 30);
+				const height = Math.max(2.5, peak * 26);
+				const ahead = progress > 0 && index >= played;
 				return (
 					<rect
 						key={`${index}-${peak}`}
 						x={index * 3}
-						y={18 - height / 2}
-						width={1.8}
+						y={16 - height / 2}
+						width={1.5}
 						height={height}
-						rx={0.9}
-						fill={index < played ? 'var(--color-ink)' : 'var(--color-ink-faint)'}
+						rx={0.75}
+						fill={ahead ? 'var(--color-ink-faint)' : 'var(--color-ink)'}
 					/>
 				);
 			})}
@@ -241,7 +242,7 @@ export function AudioNode({ data }: BoardNodeProps) {
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
-				<div className="flex h-full w-full items-center gap-3 rounded-lg border border-line bg-card px-3.5 shadow-card">
+				<div className="flex h-full w-full items-center gap-3.5 rounded-[22px] bg-card px-4 shadow-card">
 					{src ? (
 						// biome-ignore lint/a11y/useMediaCaption: short voice notes; transcript is a seed
 						<audio
@@ -270,14 +271,16 @@ export function AudioNode({ data }: BoardNodeProps) {
 							if (el.paused) void el.play();
 							else el.pause();
 						}}
-						className="nodrag grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-deep text-ink transition hover:bg-line"
+						className="nodrag grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink/10 text-ink transition hover:bg-ink/15"
 					>
-						{playing ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="ml-0.5 h-4 w-4" />}
+						{playing ? (
+							<PauseIcon className="h-5 w-5 fill-current" />
+						) : (
+							<PlayIcon className="ml-0.5 h-5 w-5 fill-current" />
+						)}
 					</button>
 					<Waveform peaks={meta.peaks} progress={progress} />
-					<span className="shrink-0 font-mono text-[11px] text-ink-soft tracking-wider">
-						{clock(meta.duration)}
-					</span>
+					<span className="shrink-0 text-[13px] text-ink-soft">{clock(meta.duration)}</span>
 				</div>
 			}
 			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}

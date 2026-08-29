@@ -8,7 +8,7 @@ export const ITEM_SIZES = {
 	note: { w: 260, h: 200 },
 	image: { w: 264, h: 264 },
 	emoji: { w: 96, h: 96 },
-	audio: { w: 264, h: 132 },
+	audio: { w: 300, h: 112 },
 } as const;
 
 export type BoardItemType = keyof typeof ITEM_SIZES;
