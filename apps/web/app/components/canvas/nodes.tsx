@@ -466,21 +466,32 @@ function parseDrawing(raw: string | null): DrawingData {
 /** Long-press (touch/pen, 500ms) — the mobile way to reach delete on silent items. */
 function useLongPress(onLongPress: () => void) {
 	const timer = useRef<number | null>(null);
+	const touches = useRef(0);
 	const clear = () => {
 		if (timer.current) {
 			window.clearTimeout(timer.current);
 			timer.current = null;
 		}
 	};
+	const release = () => {
+		touches.current = Math.max(0, touches.current - 1);
+		clear();
+	};
 	return {
 		onPointerDown: (event: React.PointerEvent) => {
 			if (event.pointerType === 'mouse') return;
+			touches.current += 1;
+			// A second finger means pinch, not press.
+			if (touches.current > 1) {
+				clear();
+				return;
+			}
 			timer.current = window.setTimeout(onLongPress, 500);
 		},
-		onPointerUp: clear,
+		onPointerUp: release,
 		onPointerMove: clear,
-		onPointerLeave: clear,
-		onPointerCancel: clear,
+		onPointerLeave: release,
+		onPointerCancel: release,
 	};
 }
 
