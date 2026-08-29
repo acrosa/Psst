@@ -238,7 +238,7 @@ export function Composer() {
 		<>
 			{drawing ? <DrawLayer color={color} strokes={strokes} onStroke={addStroke} /> : null}
 
-			<div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-3 sm:bottom-6 sm:px-6">
+			<div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center px-5 sm:bottom-6 sm:px-6">
 				<div className="pointer-events-auto w-full max-w-2xl">
 					{fetcher.data?.error ||
 					photoFetcher.data?.error ||
