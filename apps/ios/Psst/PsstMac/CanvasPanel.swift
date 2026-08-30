@@ -254,7 +254,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 		outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
 			matching: [.leftMouseDown, .rightMouseDown],
 		) { [weak self] _ in
-			guard let self, !self.pointerInsidePanel else { return }
+			guard let self, !self.detached, !self.pointerInsidePanel else { return }
 			self.close()
 		}
 	}
