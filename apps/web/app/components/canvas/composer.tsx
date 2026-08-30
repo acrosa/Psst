@@ -252,7 +252,7 @@ export function Composer({ members = [] }: { members?: Mentionable[] } = {}) {
 			{drawing ? <DrawLayer color={color} strokes={strokes} onStroke={addStroke} /> : null}
 
 			<div
-				className="pointer-events-none absolute inset-x-0 z-30 flex justify-center px-5 sm:px-6"
+				className="pointer-events-none absolute inset-x-0 z-30 flex justify-center px-8 sm:px-6"
 				style={{ bottom: 'max(0.875rem, calc(env(safe-area-inset-bottom) + 0.5rem))' }}
 			>
 				<div className="pointer-events-auto w-full max-w-2xl">

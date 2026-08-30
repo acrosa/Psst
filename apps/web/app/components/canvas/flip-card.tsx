@@ -206,7 +206,7 @@ export function FlipCard({
 					{badges}
 				</div>
 				{flippable ? (
-					<div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+					<div className="absolute inset-x-0 top-0 h-full min-h-40 [backface-visibility:hidden] [transform:rotateY(180deg)]">
 						{back}
 					</div>
 				) : null}
