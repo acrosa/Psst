@@ -52,14 +52,29 @@ final class PanelController: NSObject, NSWindowDelegate {
 	}
 
 	func windowDidResignKey(_ notification: Notification) {
-		if !detached { close() }
+		// A click inside the panel (titlebar drags included) never dismisses.
+		if !detached, !pointerInsidePanel { close() }
 	}
 
 	/// A user drag (mouse down, not our animation) detaches the panel —
-	/// it's now a little window that stays around until closed.
+	/// it's now a little window that stays around until closed. Will-move
+	/// fires at drag start, before dismissal paths can race it.
+	func windowWillMove(_ notification: Notification) {
+		markDetachedIfUserDrag()
+	}
+
 	func windowDidMove(_ notification: Notification) {
+		markDetachedIfUserDrag()
+	}
+
+	private func markDetachedIfUserDrag() {
 		guard isOpen, !animating, !detached, NSEvent.pressedMouseButtons & 1 == 1 else { return }
 		setDetached(true)
+	}
+
+	private var pointerInsidePanel: Bool {
+		guard let panel else { return false }
+		return panel.frame.insetBy(dx: -4, dy: -4).contains(NSEvent.mouseLocation)
 	}
 
 	/// The close button (visible while detached) closes behind our back.
@@ -239,7 +254,8 @@ final class PanelController: NSObject, NSWindowDelegate {
 		outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
 			matching: [.leftMouseDown, .rightMouseDown],
 		) { [weak self] _ in
-			self?.close()
+			guard let self, !self.pointerInsidePanel else { return }
+			self.close()
 		}
 	}
 
