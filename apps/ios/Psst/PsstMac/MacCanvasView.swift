@@ -7,7 +7,16 @@ struct MacCanvasView: NSViewRepresentable {
 
 	func makeCoordinator() -> WebCanvasCoordinator {
 		let appState = self.appState
-		return WebCanvasCoordinator(onSessionExpired: { appState.signOut() })
+		return WebCanvasCoordinator(
+			onSessionExpired: { appState.signOut() },
+			// The panel is for canvas-shaped pages; full-page experiences
+			// (settings, timeline, legal) belong in a real browser window.
+			opensExternally: { url in
+				let parts = url.pathComponents
+				if parts.count >= 4, parts[1] == "spaces" { return true }
+				return ["/privacy", "/terms", "/design"].contains(url.path())
+			},
+		)
 	}
 
 	func makeNSView(context: Context) -> WKWebView {

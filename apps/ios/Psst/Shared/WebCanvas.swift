@@ -74,11 +74,15 @@ enum WebCanvas {
 
 final class WebCanvasCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
 	private let onSessionExpired: () -> Void
+	/// Same-host pages that outgrow this shell (a small panel can't host a
+	/// full settings page) — return true to hand the URL to the browser.
+	private let opensExternally: ((URL) -> Bool)?
 	private var expired = false
 	private var urlObservation: NSKeyValueObservation?
 
-	init(onSessionExpired: @escaping () -> Void) {
+	init(onSessionExpired: @escaping () -> Void, opensExternally: ((URL) -> Bool)? = nil) {
 		self.onSessionExpired = onSessionExpired
+		self.opensExternally = opensExternally
 	}
 
 	/// Track the space on screen across SPA route changes, which never
@@ -114,15 +118,24 @@ final class WebCanvasCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
 				}
 				return
 			}
+			if navigationAction.targetFrame?.isMainFrame != false, opensExternally?(url) == true {
+				decisionHandler(.cancel)
+				openInBrowser(url)
+				return
+			}
 			decisionHandler(.allow)
 		} else {
 			decisionHandler(.cancel)
-			#if os(iOS)
-				UIApplication.shared.open(url)
-			#else
-				NSWorkspace.shared.open(url)
-			#endif
+			openInBrowser(url)
 		}
+	}
+
+	private func openInBrowser(_ url: URL) {
+		#if os(iOS)
+			UIApplication.shared.open(url)
+		#else
+			NSWorkspace.shared.open(url)
+		#endif
 	}
 
 	/// The system reclaimed the page in the background — bring it back fresh

@@ -18,6 +18,9 @@ final class PanelController: NSObject, NSWindowDelegate {
 	private var panel: CanvasPanel?
 	private var outsideClickMonitor: Any?
 	private var contentVisible = false
+	private var animating = false
+	/// Dragged away from the menu bar: the panel stays put until closed.
+	private(set) var detached = false
 
 	private static let sizeKey = "panelSize"
 	private static let defaultSize = NSSize(width: 480, height: 620)
@@ -49,7 +52,30 @@ final class PanelController: NSObject, NSWindowDelegate {
 	}
 
 	func windowDidResignKey(_ notification: Notification) {
-		close()
+		if !detached { close() }
+	}
+
+	/// A user drag (mouse down, not our animation) detaches the panel —
+	/// it's now a little window that stays around until closed.
+	func windowDidMove(_ notification: Notification) {
+		guard isOpen, !animating, !detached, NSEvent.pressedMouseButtons & 1 == 1 else { return }
+		setDetached(true)
+	}
+
+	/// The close button (visible while detached) closes behind our back.
+	func windowWillClose(_ notification: Notification) {
+		guard isOpen else { return }
+		isOpen = false
+		onOpenStateChange?(false)
+		removeOutsideClickMonitor()
+		if let panel { preferredSize = panel.frame.size }
+		setDetached(false)
+		hideContent()
+	}
+
+	private func setDetached(_ value: Bool) {
+		detached = value
+		panel?.standardWindowButton(.closeButton)?.isHidden = !value
 	}
 
 	// MARK: Open / close
@@ -63,10 +89,12 @@ final class PanelController: NSObject, NSWindowDelegate {
 		let panel = ensurePanel()
 		guard let anchor = anchorFrame(for: button) else { return }
 
+		setDetached(false)
 		let final = finalFrame(anchoredTo: anchor)
 		isOpen = true
 		onOpenStateChange?(true)
 
+		animating = true
 		if reduceMotion {
 			panel.setFrame(final, display: false)
 			panel.alphaValue = 0
@@ -75,6 +103,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 				context.duration = 0.15
 				panel.animator().alphaValue = 1
 			}
+			animating = false
 			revealContent()
 		} else {
 			// Grow out of the menu bar: start as a sliver under the icon.
@@ -95,6 +124,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 					panel.animator().alphaValue = 1
 				},
 				completionHandler: { [weak self] in
+					self?.animating = false
 					self?.revealContent()
 				},
 			)
@@ -108,7 +138,9 @@ final class PanelController: NSObject, NSWindowDelegate {
 		onOpenStateChange?(false)
 		removeOutsideClickMonitor()
 		preferredSize = panel.frame.size
+		setDetached(false)
 		hideContent()
+		animating = true
 
 		let current = panel.frame
 		let tucked = NSRect(
@@ -124,7 +156,8 @@ final class PanelController: NSObject, NSWindowDelegate {
 				if !reduceMotion { panel.animator().setFrame(tucked, display: true) }
 				panel.animator().alphaValue = 0
 			},
-			completionHandler: {
+			completionHandler: { [weak self] in
+				self?.animating = false
 				panel.orderOut(nil)
 				panel.setFrame(NSRect(origin: current.origin, size: current.size), display: false)
 			},
