@@ -50,10 +50,13 @@ export async function action({ request }: Route.ActionArgs) {
 		});
 
 		if (!response.ok) {
-			let message = 'Registration failed. Please try again.';
+			let message =
+				response.status >= 500
+					? 'Something hiccuped on our end — try again in a moment.'
+					: 'Registration failed. Please try again.';
 			try {
 				const body = await response.json();
-				message = body?.message || body?.error || message;
+				if (response.status < 500) message = body?.message || body?.error || message;
 			} catch {
 				// keep the default message
 			}
@@ -97,8 +100,8 @@ export async function action({ request }: Route.ActionArgs) {
 			},
 		});
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Registration failed';
-		return { error: message };
+		console.error('[register] sign-up failed:', error);
+		return { error: 'Something hiccuped on our end — try again in a moment.' };
 	}
 }
 

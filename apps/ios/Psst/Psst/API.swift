@@ -84,8 +84,11 @@ struct PsstAPI {
 		let (data, response) = try await URLSession.shared.data(for: request)
 		guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, nil) }
 		guard (200..<300).contains(http.statusCode) else {
+			// 5xx bodies can carry internals — never show those to the user.
 			let message =
-				(try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
+				http.statusCode >= 500
+				? "Something hiccuped on our end — try again in a moment."
+				: (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
 			throw APIError.badResponse(http.statusCode, message)
 		}
 

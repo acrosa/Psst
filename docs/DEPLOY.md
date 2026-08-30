@@ -39,6 +39,10 @@ R2 is required on Vercel — serverless functions have no persistent disk — an
    APP_URL=https://www.psst.you
    EXTRA_TRUSTED_ORIGINS=https://psst.you
 
+   # optional but recommended: lets every deploy apply pending migrations
+   # itself (session pooler, port 5432) — no more code/schema drift
+   DATABASE_URL_MIGRATIONS=postgres://…pooler.supabase.com:5432/postgres
+
    S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
    S3_REGION=auto
    S3_BUCKET=psst-uploads
@@ -165,7 +169,7 @@ and [private-key creation](https://developer.apple.com/help/account/capabilities
 
 - [ ] `BETTER_AUTH_SECRET` is a fresh 32+ char secret (not the dev placeholder)
 - [ ] `BETTER_AUTH_URL` / `APP_URL` are the production https domain (invite links use them)
-- [ ] Migrations ran against Supabase (`pnpm db:migrate` with the session-pooler string)
+- [ ] Migrations current: either `DATABASE_URL_MIGRATIONS` is set in Vercel (deploys migrate themselves) or `pnpm db:migrate` ran with the session-pooler string
 - [ ] Drop a photo — it lands in R2 and gets a thumbnail
 - [ ] Invite email arrives (or you're consciously in console-log mode)
 - [ ] Google OAuth client uses the exact production origin and callback URI

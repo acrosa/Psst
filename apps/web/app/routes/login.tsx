@@ -46,10 +46,13 @@ export async function action({ request }: Route.ActionArgs) {
 		});
 
 		if (!response.ok) {
-			let message = 'Sign in failed. Check your email and password.';
+			let message =
+				response.status >= 500
+					? 'Something hiccuped on our end — try again in a moment.'
+					: 'Sign in failed. Check your email and password.';
 			try {
 				const body = await response.json();
-				message = body?.message || body?.error || message;
+				if (response.status < 500) message = body?.message || body?.error || message;
 			} catch {
 				// keep the default message
 			}
@@ -73,8 +76,8 @@ export async function action({ request }: Route.ActionArgs) {
 			},
 		});
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Sign in failed';
-		return { error: message };
+		console.error('[login] sign-in failed:', error);
+		return { error: 'Something hiccuped on our end — try again in a moment.' };
 	}
 }
 
