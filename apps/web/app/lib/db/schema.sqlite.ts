@@ -33,6 +33,7 @@ export const users = sqliteTable('users', {
 	name: text('name'),
 	image: text('image'),
 	emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
+	emailMentions: integer('email_mentions', { mode: 'boolean' }).notNull().default(true),
 	createdAt: createdAt(),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });

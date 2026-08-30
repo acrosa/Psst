@@ -43,8 +43,68 @@ export async function sendInviteEmail({
 			<p style="font-size: 12px; color: #c9bfae; text-align: center;">Not a chat. No pressure. Just keepsakes.</p>
 		</div>`;
 
+	await deliver({ to, subject, text, html, logHint: url });
+}
+
+type MentionEmailArgs = {
+	to: string;
+	actorName: string | null;
+	spaceName: string;
+	spaceEmoji: string;
+	excerpt: string;
+	url: string;
+};
+
+/** Someone was called by name — the one email psst sends besides invites. */
+export async function sendMentionEmail({
+	to,
+	actorName,
+	spaceName,
+	spaceEmoji,
+	excerpt,
+	url,
+}: MentionEmailArgs): Promise<void> {
+	const actor = actorName ?? 'Someone';
+	const subject = `${spaceEmoji} ${actor} mentioned you on "${spaceName}"`;
+	const text = [
+		`psst — ${actor} mentioned you on today's canvas in "${spaceName}":`,
+		'',
+		`“${excerpt}”`,
+		'',
+		'See it on the board:',
+		url,
+	].join('\n');
+	const html = `
+		<div style="font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 460px; margin: 0 auto; padding: 32px 24px; color: #40382f;">
+			<div style="font-size: 40px; text-align: center;">${spaceEmoji}</div>
+			<h1 style="font-size: 22px; text-align: center; font-weight: 600;">${actor} mentioned you</h1>
+			<p style="font-size: 15px; line-height: 1.5; color: #8d8375; text-align: center;">
+				On today's canvas in <strong style="color:#40382f;">${spaceName}</strong>:
+			</p>
+			<p style="font-size: 15px; line-height: 1.6; background: #faf6ef; border-radius: 10px; padding: 14px 18px; text-align: center;">“${excerpt}”</p>
+			<p style="text-align: center; margin: 28px 0;">
+				<a href="${url}" style="background: #e2725b; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 500;">Open the canvas</a>
+			</p>
+			<p style="font-size: 12px; color: #c9bfae; text-align: center;">You can turn mention emails off from your profile.</p>
+		</div>`;
+	await deliver({ to, subject, text, html, logHint: url });
+}
+
+async function deliver({
+	to,
+	subject,
+	text,
+	html,
+	logHint,
+}: {
+	to: string;
+	subject: string;
+	text: string;
+	html: string;
+	logHint: string;
+}): Promise<void> {
 	if (!env.RESEND_API_KEY) {
-		console.log(`[email] (console mode) to=${to} subject=${JSON.stringify(subject)}\n  ${url}`);
+		console.log(`[email] (console mode) to=${to} subject=${JSON.stringify(subject)}\n  ${logHint}`);
 		return;
 	}
 

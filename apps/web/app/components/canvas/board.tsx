@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
+import type { Mentionable } from '~/lib/mentions';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { DropPasteLayer } from './drop-paste';
 import {
@@ -36,6 +37,8 @@ export type BoardProps = {
 	items: BoardItem[];
 	currentUserId: string;
 	frozen: boolean;
+	/** Space members, for @mentions. */
+	members?: Mentionable[];
 	onMove?: (itemId: string, x: number, y: number) => void;
 	onResize?: (itemId: string, scale: number) => void;
 	onDelete?: (itemIds: string[]) => void;
@@ -57,6 +60,7 @@ export function Board({
 	items,
 	currentUserId,
 	frozen,
+	members,
 	onMove,
 	onResize,
 	onDelete,
@@ -74,7 +78,7 @@ export function Board({
 		position: { x: item.x, y: item.y },
 		zIndex: item.z,
 		draggable: !frozen,
-		data: { item, currentUserId, frozen, onResize, onLike },
+		data: { item, currentUserId, frozen, members, onResize, onLike },
 	});
 
 	const [nodes, setNodes] = useState<BoardNode[]>(() => items.map(toNode));
@@ -103,7 +107,7 @@ export function Board({
 				return node;
 			});
 		});
-	}, [items, currentUserId, frozen]);
+	}, [items, currentUserId, frozen, members]);
 
 	// Delete/Backspace takes the selected cards you authored off the board.
 	useEffect(() => {

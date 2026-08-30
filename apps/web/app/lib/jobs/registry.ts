@@ -12,7 +12,13 @@ import { unfurlFetch } from './handlers/unfurl';
 export type JobPayloads = {
 	'unfurl.fetch': { itemId: string };
 	'image.process': { itemId: string };
-	'push.notify': { itemId: string; kind: 'item' | 'comment'; actorId: string };
+	'push.notify': {
+		itemId: string;
+		kind: 'item' | 'comment';
+		actorId: string;
+		/** Text to scan for @mentions — mentioned members get a direct nudge. */
+		mentionText?: string;
+	};
 };
 
 export type JobType = keyof JobPayloads;

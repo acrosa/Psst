@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRevalidator } from 'react-router';
 import { CameraIcon } from '~/components/icons';
 import { Avatar } from '~/components/ui/avatar';
@@ -24,13 +24,23 @@ export function ProfileDialog({
 	const [preview, setPreview] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [emailMentions, setEmailMentions] = useState(true);
 	const revalidator = useRevalidator();
+
+	useEffect(() => {
+		if (!open) return;
+		fetch('/api/profile')
+			.then((response) => response.json())
+			.then((data) => setEmailMentions(data.emailMentions ?? true))
+			.catch(() => {});
+	}, [open]);
 
 	async function save(formData: FormData) {
 		setSaving(true);
 		setError(null);
 		try {
 			if (file) formData.set('file', file);
+			formData.set('emailMentions', emailMentions ? 'true' : 'false');
 			const response = await fetch('/api/profile', { method: 'POST', body: formData });
 			const body = await response.json().catch(() => ({}));
 			if (!response.ok) {
@@ -90,6 +100,16 @@ export function ProfileDialog({
 						required
 					/>
 				</div>
+
+				<label className="flex cursor-pointer items-center gap-2.5 text-ink-soft text-sm">
+					<input
+						type="checkbox"
+						checked={emailMentions}
+						onChange={(event) => setEmailMentions(event.currentTarget.checked)}
+						className="h-4 w-4 accent-[var(--color-accent)]"
+					/>
+					Email me when someone mentions me
+				</label>
 
 				<div className="flex justify-end gap-2">
 					<Button type="button" variant="ghost" onClick={onClose}>

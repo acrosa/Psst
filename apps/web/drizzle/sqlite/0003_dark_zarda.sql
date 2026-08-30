@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `email_mentions` integer DEFAULT true NOT NULL;

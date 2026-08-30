@@ -4,7 +4,9 @@ import { TrashIcon } from '~/components/icons';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { REACTION_EMOJIS } from '~/lib/design';
+import type { Mentionable } from '~/lib/mentions';
 import type { BoardItem } from '~/lib/services/canvases.server';
+import { MentionMenu, MentionText } from './mention';
 
 function timeOfDay(iso: string): string {
 	return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
@@ -21,12 +23,16 @@ export function CardBack({
 	item,
 	currentUserId,
 	frozen,
+	members = [],
 }: {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
+	members?: Mentionable[];
 }) {
 	const commentFetcher = useFetcher<{ error?: string }>();
+	const [draft, setDraft] = useState('');
+	const inputRef = useRef<HTMLInputElement>(null);
 	const reactionFetcher = useFetcher();
 	const deleteFetcher = useFetcher();
 	const formRef = useRef<HTMLFormElement>(null);
@@ -36,6 +42,7 @@ export function CardBack({
 	useEffect(() => {
 		if (commentFetcher.state === 'idle' && !commentFetcher.data?.error) {
 			formRef.current?.reset();
+			setDraft('');
 		}
 	}, [commentFetcher.state, commentFetcher.data]);
 
@@ -78,21 +85,35 @@ export function CardBack({
 					item.comments.map((comment) => (
 						<p key={comment.id} className="font-serif text-[15px] leading-snug">
 							<span className="text-ink-soft">{comment.authorName ?? 'Someone'}:</span>{' '}
-							{comment.text}
+							<MentionText text={comment.text} members={members} />
 						</p>
 					))
 				)}
 			</div>
 
 			{!frozen ? (
-				<commentFetcher.Form method="post" ref={formRef} className="nodrag" data-noflip>
+				<commentFetcher.Form method="post" ref={formRef} className="nodrag relative" data-noflip>
+					<MentionMenu
+						value={draft}
+						members={members}
+						currentUserId={currentUserId}
+						onPick={(next) => {
+							setDraft(next);
+							if (inputRef.current) {
+								inputRef.current.value = next;
+								inputRef.current.focus();
+							}
+						}}
+					/>
 					<input type="hidden" name="intent" value="add-comment" />
 					<input type="hidden" name="itemId" value={item.id} />
 					<input
+						ref={inputRef}
 						name="text"
 						placeholder="write on the back…"
 						maxLength={280}
 						autoComplete="off"
+						onChange={(event) => setDraft(event.currentTarget.value)}
 						className="w-full rounded-md border border-line bg-paper px-2.5 py-1.5 font-serif text-[15px] outline-none placeholder:text-ink-faint focus:border-accent"
 					/>
 				</commentFetcher.Form>

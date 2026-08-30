@@ -169,7 +169,12 @@ export async function createItem({ spaceId, userId, kind, content, position }: C
 	}
 
 	track({ event: 'item_posted', icon: '📮', userId, tags: { type: item.type } });
-	await enqueue('push.notify', { itemId: item.id, kind: 'item', actorId: userId });
+	await enqueue('push.notify', {
+		itemId: item.id,
+		kind: 'item',
+		actorId: userId,
+		mentionText: item.type === 'note' ? (item.text ?? undefined) : undefined,
+	});
 	return item;
 }
 
@@ -257,7 +262,12 @@ export async function addComment(args: { itemId: string; userId: string; text: s
 		.returning();
 
 	track({ event: 'comment_added', icon: '✏️', userId: args.userId });
-	await enqueue('push.notify', { itemId: item.id, kind: 'comment', actorId: args.userId });
+	await enqueue('push.notify', {
+		itemId: item.id,
+		kind: 'comment',
+		actorId: args.userId,
+		mentionText: text,
+	});
 	return comment;
 }
 

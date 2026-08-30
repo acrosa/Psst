@@ -14,6 +14,8 @@ import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES, STICKER_EMOJIS } from '~/lib/design';
 import { looksLikeUrl, normalizeUrl } from '~/lib/links';
+import type { Mentionable } from '~/lib/mentions';
+import { MentionMenu } from './mention';
 
 /** Pencil colors — one gesture of color, from the psst palette. */
 export const PENCIL_COLORS = ['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'];
@@ -26,8 +28,9 @@ export type Stroke = Point[];
  * a paper slip, the tray drops emoji stickers, the pencil draws freely. New
  * items always land inside the current viewport.
  */
-export function Composer() {
+export function Composer({ members = [] }: { members?: Mentionable[] } = {}) {
 	const { screenToFlowPosition } = useReactFlow();
+	const [draft, setDraft] = useState('');
 	const fetcher = useFetcher<{ error?: string }>();
 	const stickerFetcher = useFetcher();
 	const photoFetcher = useFetcher<{ error?: string }>();
@@ -62,6 +65,7 @@ export function Composer() {
 	useEffect(() => {
 		if (fetcher.state === 'idle' && fetcher.data && !fetcher.data.error && inputRef.current) {
 			inputRef.current.value = '';
+			setDraft('');
 		}
 	}, [fetcher.state, fetcher.data]);
 
@@ -409,8 +413,19 @@ export function Composer() {
 								event.preventDefault();
 								drop();
 							}}
-							className="flex items-center gap-1.5 rounded-full border border-line bg-card py-1.5 pr-1.5 pl-2 shadow-lift"
+							className="relative flex items-center gap-1.5 rounded-full border border-line bg-card py-1.5 pr-1.5 pl-2 shadow-lift"
 						>
+							<MentionMenu
+								value={draft}
+								members={members}
+								onPick={(next) => {
+									setDraft(next);
+									if (inputRef.current) {
+										inputRef.current.value = next;
+										inputRef.current.focus();
+									}
+								}}
+							/>
 							<button
 								type="button"
 								aria-label="Add to the board"
@@ -495,6 +510,7 @@ export function Composer() {
 								data-testid="composer-input"
 								placeholder="drop a link, or whisper a note…"
 								autoComplete="off"
+								onChange={(event) => setDraft(event.currentTarget.value)}
 								className="h-9 min-w-0 flex-1 bg-transparent px-1.5 text-base outline-none placeholder:text-ink-faint"
 							/>
 							<Button type="submit" disabled={submitting} className="rounded-full">

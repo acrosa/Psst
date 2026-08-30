@@ -14,12 +14,27 @@ const EXT_BY_MIME: Record<string, string> = {
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
-/** Update name and/or photo; the stored image URL is versioned so caches let go. */
+/** The signed-in user's editable profile bits. */
+export async function loader({ request }: Route.LoaderArgs) {
+	const user = await requireUser(request);
+	const [row] = await db
+		.select({ emailMentions: schema.users.emailMentions })
+		.from(schema.users)
+		.where(eq(schema.users.id, user.id));
+	return { emailMentions: row?.emailMentions ?? true };
+}
+
+/** Update name, photo, and/or the mention-email preference. */
 export async function action({ request }: Route.ActionArgs) {
 	const user = await requireUser(request);
 	const formData = await request.formData();
 
-	const updates: { name?: string; image?: string } = {};
+	const updates: { name?: string; image?: string; emailMentions?: boolean } = {};
+
+	const emailMentions = formData.get('emailMentions');
+	if (emailMentions === 'true' || emailMentions === 'false') {
+		updates.emailMentions = emailMentions === 'true';
+	}
 
 	const name = formData.get('name');
 	if (typeof name === 'string') {

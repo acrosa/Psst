@@ -274,7 +274,8 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						items={board.items}
 						currentUserId={user.id}
 						frozen={false}
-						composer={<Composer />}
+						members={members}
+						composer={<Composer members={members} />}
 						onLike={(itemId) =>
 							moveFetcher.submit(
 								{ intent: 'toggle-reaction', itemId, emoji: '🫶' },

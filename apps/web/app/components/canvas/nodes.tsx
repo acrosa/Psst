@@ -6,15 +6,19 @@ import { Avatar } from '~/components/ui/avatar';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { ITEM_SIZES } from '~/lib/design';
+import type { Mentionable } from '~/lib/mentions';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { BlurhashCanvas } from './blurhash-canvas';
 import { CardBack } from './card-back';
 import { FlipCard } from './flip-card';
+import { MentionText } from './mention';
 
 export type BoardNodeData = {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
+	/** Space members, for rendering and completing @mentions. */
+	members?: Mentionable[];
 	onResize?: (itemId: string, scale: number) => void;
 	onLike?: (itemId: string) => void;
 };
@@ -102,7 +106,14 @@ export function PostcardNode({ data }: BoardNodeProps) {
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			onToggle={() => setFlipped((f) => !f)}
 			front={front}
-			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
+			back={
+				<CardBack
+					item={item}
+					currentUserId={currentUserId}
+					frozen={frozen}
+					members={data.members ?? []}
+				/>
+			}
 		/>
 	);
 }
@@ -191,12 +202,19 @@ export function SlipNode({ data }: BoardNodeProps) {
 								fontFamily: "'American Typewriter', 'Courier Prime', 'Courier New', monospace",
 							}}
 						>
-							{item.text}
+							<MentionText text={item.text ?? ''} members={data.members ?? []} />
 						</p>
 					</div>
 				</div>
 			}
-			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
+			back={
+				<CardBack
+					item={item}
+					currentUserId={currentUserId}
+					frozen={frozen}
+					members={data.members ?? []}
+				/>
+			}
 		/>
 	);
 }
@@ -396,7 +414,14 @@ export function AudioNode({ data }: BoardNodeProps) {
 					<span className="shrink-0 text-[13px] text-ink-soft">{clock(meta.duration)}</span>
 				</div>
 			}
-			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
+			back={
+				<CardBack
+					item={item}
+					currentUserId={currentUserId}
+					frozen={frozen}
+					members={data.members ?? []}
+				/>
+			}
 		/>
 	);
 }
@@ -719,7 +744,14 @@ export function PrintNode({ data }: BoardNodeProps) {
 					</div>
 				</div>
 			}
-			back={<CardBack item={item} currentUserId={currentUserId} frozen={frozen} />}
+			back={
+				<CardBack
+					item={item}
+					currentUserId={currentUserId}
+					frozen={frozen}
+					members={data.members ?? []}
+				/>
+			}
 		/>
 	);
 }
