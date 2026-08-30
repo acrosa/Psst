@@ -75,7 +75,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 	private func setDetached(_ value: Bool) {
 		detached = value
-		panel?.standardWindowButton(.closeButton)?.isHidden = !value
 	}
 
 	// MARK: Open / close
@@ -170,13 +169,12 @@ final class PanelController: NSObject, NSWindowDelegate {
 		if let panel { return panel }
 		let panel = CanvasPanel(
 			contentRect: NSRect(origin: .zero, size: preferredSize),
-			styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel],
+			styleMask: [.titled, .closable, .resizable, .nonactivatingPanel],
 			backing: .buffered,
 			defer: true,
 		)
-		panel.titleVisibility = .hidden
+		panel.title = "psst"
 		panel.titlebarAppearsTransparent = true
-		panel.standardWindowButton(.closeButton)?.isHidden = true
 		panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
 		panel.standardWindowButton(.zoomButton)?.isHidden = true
 		panel.isMovableByWindowBackground = false
@@ -185,17 +183,13 @@ final class PanelController: NSObject, NSWindowDelegate {
 		panel.minSize = Self.minSize
 		panel.isReleasedWhenClosed = false
 		panel.hidesOnDeactivate = false
-		panel.backgroundColor = .clear
+		panel.backgroundColor = NSColor(PsstColor.paper)
 		panel.hasShadow = true
 		panel.delegate = self
 
 		let root = MacRootView(contentVisible: { [weak self] in self?.contentVisible ?? true })
 			.environment(appState)
-		let hosting = NSHostingView(rootView: AnyView(root))
-		hosting.wantsLayer = true
-		hosting.layer?.cornerRadius = 14
-		hosting.layer?.masksToBounds = true
-		panel.contentView = hosting
+		panel.contentView = NSHostingView(rootView: AnyView(root))
 		self.panel = panel
 		return panel
 	}
@@ -205,11 +199,8 @@ final class PanelController: NSObject, NSWindowDelegate {
 		guard let panel else { return }
 		let root = MacRootView(contentVisible: { [weak self] in self?.contentVisible ?? true })
 			.environment(appState)
-		let hosting = NSHostingView(rootView: AnyView(root))
-		hosting.wantsLayer = true
-		hosting.layer?.cornerRadius = 14
-		hosting.layer?.masksToBounds = true
-		panel.contentView = hosting
+		panel.contentView = NSHostingView(rootView: AnyView(root))
+		panel.title = "psst"
 	}
 
 	private func anchorFrame(for button: NSStatusBarButton) -> NSRect? {

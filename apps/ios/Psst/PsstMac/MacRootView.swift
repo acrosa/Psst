@@ -9,23 +9,11 @@ struct MacRootView: View {
 	@State private var revealed = false
 
 	var body: some View {
-		VStack(spacing: 0) {
-			// The grab strip — drag here to pull the panel off the menu bar.
-			ZStack {
-				PsstColor.paper
-				Capsule()
-					.fill(PsstColor.inkFaint.opacity(0.7))
-					.frame(width: 36, height: 4)
-			}
-			.frame(height: 18)
-			.overlay(DragHandle())
-
-			Group {
-				if appState.isSignedIn {
-					MacCanvasView()
-				} else {
-					LoginView()
-				}
+		Group {
+			if appState.isSignedIn {
+				MacCanvasView()
+			} else {
+				LoginView()
 			}
 		}
 		.frame(minWidth: 360, minHeight: 420)
