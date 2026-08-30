@@ -1,13 +1,21 @@
 import Foundation
 
-/// Where psst lives. The base URL is shared with the widget via the App Group.
+/// Where psst lives. On iOS the base URL is shared with the widget via the
+/// App Group; on macOS plain defaults do (nothing to share, and the group
+/// container would prompt).
 enum Config {
 	static let appGroup = "group.you.psst.app"
 
+	private static var defaults: UserDefaults {
+		#if os(iOS)
+			UserDefaults(suiteName: appGroup) ?? .standard
+		#else
+			.standard
+		#endif
+	}
+
 	static var baseURL: URL {
-		if let stored = UserDefaults(suiteName: appGroup)?.string(forKey: "baseURL"),
-			let url = URL(string: stored)
-		{
+		if let stored = defaults.string(forKey: "baseURL"), let url = URL(string: stored) {
 			return url
 		}
 		#if DEBUG
@@ -21,12 +29,12 @@ enum Config {
 	}
 
 	static func setBaseURL(_ value: String) {
-		UserDefaults(suiteName: appGroup)?.set(value, forKey: "baseURL")
+		defaults.set(value, forKey: "baseURL")
 	}
 
 	/// The space the canvas last showed — where the app reopens.
 	static var lastSpaceId: String? {
-		get { UserDefaults(suiteName: appGroup)?.string(forKey: "lastSpaceId") }
-		set { UserDefaults(suiteName: appGroup)?.set(newValue, forKey: "lastSpaceId") }
+		get { defaults.string(forKey: "lastSpaceId") }
+		set { defaults.set(newValue, forKey: "lastSpaceId") }
 	}
 }

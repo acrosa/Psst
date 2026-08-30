@@ -70,11 +70,17 @@ struct LoginView: View {
 						}
 					}
 					field("Email") {
-						TextField("you@example.com", text: $email)
-							.textContentType(.emailAddress)
-							.keyboardType(.emailAddress)
-							.textInputAutocapitalization(.never)
-							.autocorrectionDisabled()
+						#if os(iOS)
+							TextField("you@example.com", text: $email)
+								.textContentType(.emailAddress)
+								.keyboardType(.emailAddress)
+								.textInputAutocapitalization(.never)
+								.autocorrectionDisabled()
+						#else
+							TextField("you@example.com", text: $email)
+								.textContentType(.username)
+								.autocorrectionDisabled()
+						#endif
 					}
 					field("Password") {
 						SecureField("8+ characters", text: $password)
@@ -128,6 +134,7 @@ struct LoginView: View {
 			Text(label)
 				.font(.footnote.weight(.medium))
 			content()
+				.textFieldStyle(.plain)
 				.padding(.horizontal, 14)
 				.frame(height: 46)
 				.background(PsstColor.card, in: Capsule())

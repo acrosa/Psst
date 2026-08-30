@@ -3,29 +3,6 @@ import SwiftUI
 import UserNotifications
 import WidgetKit
 
-/// App-wide session + navigation state.
-@Observable
-final class AppState {
-	var isSignedIn: Bool = SessionStore.bearerToken != nil
-	/// Set when a push is tapped; the canvas navigates to this space.
-	var pendingSpaceId: String?
-
-	func signedIn(with bearer: String) {
-		SessionStore.bearerToken = bearer
-		isSignedIn = true
-	}
-
-	func signOut() {
-		if let token = PushManager.shared.deviceToken {
-			let api = PsstAPI()
-			Task { await api.registerDevice(token: token, remove: true) }
-		}
-		SessionStore.clear()
-		Config.lastSpaceId = nil
-		isSignedIn = false
-	}
-}
-
 @main
 struct PsstApp: App {
 	@UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -42,7 +19,16 @@ struct PsstApp: App {
 				}
 			}
 			.environment(appState)
-			.onAppear { appDelegate.appState = appState }
+			.onAppear {
+				appDelegate.appState = appState
+				// The shared AppState doesn't know about push — unhook on sign-out.
+				appState.onSignOut = {
+					if let token = PushManager.shared.deviceToken {
+						let api = PsstAPI()
+						Task { await api.registerDevice(token: token, remove: true) }
+					}
+				}
+			}
 			.onChange(of: scenePhase) { _, phase in
 				if phase == .background { WidgetCenter.shared.reloadAllTimelines() }
 			}

@@ -1,5 +1,10 @@
 import SwiftUI
-import UIKit
+
+#if canImport(UIKit)
+	import UIKit
+#else
+	import AppKit
+#endif
 
 /// psst design tokens — mirrors docs/DESIGN.md (light / "paper after sundown").
 enum PsstColor {
@@ -14,19 +19,38 @@ enum PsstColor {
 	static let accentDeep = Color(light: 0xC95A44, dark: 0xCF5D46)
 }
 
+private func component(_ hex: UInt32, _ shift: UInt32) -> CGFloat {
+	CGFloat((hex >> shift) & 0xFF) / 255
+}
+
 extension Color {
 	/// A dynamic color from two hex values (0xRRGGBB), following the system theme.
 	init(light: UInt32, dark: UInt32) {
-		self.init(
-			uiColor: UIColor { traits in
-				let hex = traits.userInterfaceStyle == .dark ? dark : light
-				return UIColor(
-					red: CGFloat((hex >> 16) & 0xFF) / 255,
-					green: CGFloat((hex >> 8) & 0xFF) / 255,
-					blue: CGFloat(hex & 0xFF) / 255,
-					alpha: 1,
-				)
-			},
-		)
+		#if canImport(UIKit)
+			self.init(
+				uiColor: UIColor { traits in
+					let hex = traits.userInterfaceStyle == .dark ? dark : light
+					return UIColor(
+						red: component(hex, 16),
+						green: component(hex, 8),
+						blue: component(hex, 0),
+						alpha: 1,
+					)
+				},
+			)
+		#else
+			self.init(
+				nsColor: NSColor(name: nil) { appearance in
+					let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+					let hex = isDark ? dark : light
+					return NSColor(
+						red: component(hex, 16),
+						green: component(hex, 8),
+						blue: component(hex, 0),
+						alpha: 1,
+					)
+				},
+			)
+		#endif
 	}
 }

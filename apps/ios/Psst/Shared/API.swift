@@ -18,13 +18,24 @@ struct BoardItem: Decodable {
 	let type: String
 	let text: String?
 	let url: String?
+	let authorId: String?
 	let authorName: String?
+	/// ISO 8601 with fractional seconds (JS toISOString).
+	let createdAt: String?
 	let assets: [BoardAsset]
 }
 
 struct BoardAsset: Decodable {
 	let kind: String
 	let url: String
+}
+
+struct SessionInfo: Decodable {
+	let user: SessionUser
+
+	struct SessionUser: Decodable {
+		let id: String
+	}
 }
 
 enum APIError: LocalizedError {
@@ -119,6 +130,18 @@ struct PsstAPI {
 			throw APIError.badResponse((response as? HTTPURLResponse)?.statusCode ?? 0, nil)
 		}
 		return try JSONDecoder().decode(BoardResponse.self, from: data)
+	}
+
+	/// The signed-in user, via better-auth's bearer session endpoint.
+	/// Returns nil when the bearer no longer names a live session (the
+	/// endpoint answers 200 with a null body, not 401).
+	func fetchSession() async throws -> SessionInfo? {
+		let request = try authorizedRequest(path: "/api/auth/get-session")
+		let (data, response) = try await URLSession.shared.data(for: request)
+		guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+			throw APIError.badResponse((response as? HTTPURLResponse)?.statusCode ?? 0, nil)
+		}
+		return try? JSONDecoder().decode(SessionInfo.self, from: data)
 	}
 
 	func registerDevice(token: String, remove: Bool = false) async {

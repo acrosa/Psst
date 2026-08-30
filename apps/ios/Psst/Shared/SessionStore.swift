@@ -20,12 +20,19 @@ enum SessionStore {
 	}
 
 	private static func baseQuery(account: String) -> [String: Any] {
-		[
+		var query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,
 			kSecAttrAccount as String: account,
-			kSecAttrAccessGroup as String: Config.appGroup,
 		]
+		#if os(iOS)
+			// App groups double as keychain access groups — shared with the widget.
+			query[kSecAttrAccessGroup as String] = Config.appGroup
+		#else
+			// Modern keychain, no login-keychain prompt; nothing to share on Mac.
+			query[kSecUseDataProtectionKeychain as String] = true
+		#endif
+		return query
 	}
 
 	private static func read(account: String) -> String? {
