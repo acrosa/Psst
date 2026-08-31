@@ -19,6 +19,7 @@ export default [
 	route('spaces/:spaceId/days/:date', 'routes/space.day.tsx'),
 	route('spaces/:spaceId/settings', 'routes/space.settings.tsx'),
 	route('invite/:token', 'routes/invite.tsx'),
+	route('b/:token', 'routes/board.public.tsx'),
 
 	// API
 	route('api/auth/*', 'routes/api.auth.$.ts'),

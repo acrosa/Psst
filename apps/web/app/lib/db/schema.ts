@@ -133,6 +133,8 @@ export const canvases = pgTable(
 		// Local date in the space's timezone, 'YYYY-MM-DD'. A canvas is archived
 		// once its date is in the past — no rollover job needed.
 		date: text('date').notNull(),
+		// Set when this day is shared publicly; null = private (the default).
+		shareToken: text('share_token').unique(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [unique('canvases_space_date_unique').on(t.spaceId, t.date)],

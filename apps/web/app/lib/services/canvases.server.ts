@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { localDate } from '../dates';
 import { db, schema } from '../db/client.server';
@@ -183,6 +184,45 @@ export async function getBoardItems(canvasId: string, assetUrl: (key: string) =>
 				.map((r) => ({ emoji: r.emoji, userId: r.userId })),
 		};
 	});
+}
+
+/** Share a day publicly: mint the secret link token (idempotent). */
+export async function shareCanvas(canvasId: string): Promise<string> {
+	const [canvas] = await db
+		.select({ shareToken: schema.canvases.shareToken })
+		.from(schema.canvases)
+		.where(eq(schema.canvases.id, canvasId));
+	if (canvas?.shareToken) return canvas.shareToken;
+	const token = crypto.randomBytes(16).toString('base64url');
+	await db
+		.update(schema.canvases)
+		.set({ shareToken: token })
+		.where(eq(schema.canvases.id, canvasId));
+	return token;
+}
+
+/** Take a shared day private again — the old link stops working. */
+export async function unshareCanvas(canvasId: string): Promise<void> {
+	await db
+		.update(schema.canvases)
+		.set({ shareToken: null })
+		.where(eq(schema.canvases.id, canvasId));
+}
+
+/** A publicly shared day, by its secret token — no auth, read-only. */
+export async function getPublicBoard(token: string, assetUrl: (key: string) => string) {
+	const [row] = await db
+		.select({ canvas: schema.canvases, space: schema.spaces })
+		.from(schema.canvases)
+		.innerJoin(schema.spaces, eq(schema.canvases.spaceId, schema.spaces.id))
+		.where(eq(schema.canvases.shareToken, token));
+	if (!row) return null;
+	const items = await getBoardItems(row.canvas.id, assetUrl);
+	return {
+		space: { name: row.space.name, emoji: row.space.emoji },
+		date: row.canvas.date,
+		items,
+	};
 }
 
 /** Archived days for the timeline, newest first (today excluded by caller). */

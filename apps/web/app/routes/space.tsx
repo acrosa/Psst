@@ -4,12 +4,18 @@ import { AppHeader } from '~/components/app-header';
 import { Board } from '~/components/canvas/board';
 import { Composer } from '~/components/canvas/composer';
 import { InviteDialog } from '~/components/invite-dialog';
+import { ShareDialog } from '~/components/share-dialog';
 import { AvatarStack } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
 import { requireUser } from '~/lib/auth.server';
 import { formatDay } from '~/lib/dates';
 import { env } from '~/lib/env.server';
-import { getBoardItems, getOrCreateTodayCanvas } from '~/lib/services/canvases.server';
+import {
+	getBoardItems,
+	getOrCreateTodayCanvas,
+	shareCanvas,
+	unshareCanvas,
+} from '~/lib/services/canvases.server';
 import { createInvite } from '~/lib/services/invites.server';
 import {
 	addComment,
@@ -54,7 +60,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		user: { id: user.id, name: user.name ?? null, image: user.image ?? null },
 		space: { id: space.id, name: space.name, emoji: space.emoji, timezone: space.timezone },
 		members,
-		board: { date: canvas.date, items },
+		board: { date: canvas.date, items, shareToken: canvas.shareToken ?? null },
 		pollMs: env.NODE_ENV === 'test' ? 2000 : 10_000,
 	};
 }
@@ -74,6 +80,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 	try {
 		switch (intent) {
+			case 'share-day': {
+				const space = await getSpace(params.spaceId);
+				if (!space) return { error: 'No space.' };
+				const canvas = await getOrCreateTodayCanvas(space.id, space.timezone);
+				const token = await shareCanvas(canvas.id);
+				return { shareUrl: new URL(`/b/${token}`, request.url).toString() };
+			}
+			case 'unshare-day': {
+				const space = await getSpace(params.spaceId);
+				if (!space) return { error: 'No space.' };
+				const canvas = await getOrCreateTodayCanvas(space.id, space.timezone);
+				await unshareCanvas(canvas.id);
+				return { unshared: true };
+			}
 			case 'create-invite': {
 				const { url } = await createInvite({ spaceId: params.spaceId, userId: user.id });
 				return { inviteUrl: url };
@@ -190,6 +210,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function Space({ loaderData }: Route.ComponentProps) {
 	const { space, members, user, board, pollMs } = loaderData;
 	const [inviting, setInviting] = useState(false);
+	const [sharing, setSharing] = useState(false);
 	const [boardReady, setBoardReady] = useState(false);
 	const dragging = useRef(false);
 	const revalidator = useRevalidator();
@@ -232,6 +253,7 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						icon: 'timeline',
 						mobileOnly: true,
 					},
+					{ label: 'Share this day', onClick: () => setSharing(true), icon: 'share' },
 					{ label: 'Space settings', to: `/spaces/${space.id}/settings`, icon: 'settings' },
 					{ label: 'Your spaces', to: '/spaces', icon: 'spaces' },
 				]}
@@ -316,6 +338,11 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 			</main>
 
 			<InviteDialog open={inviting} onClose={() => setInviting(false)} />
+			<ShareDialog
+				open={sharing}
+				onClose={() => setSharing(false)}
+				alreadyShared={board.shareToken !== null}
+			/>
 		</div>
 	);
 }

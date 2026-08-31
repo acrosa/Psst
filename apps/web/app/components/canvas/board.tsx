@@ -37,6 +37,8 @@ export type BoardProps = {
 	items: BoardItem[];
 	currentUserId: string;
 	frozen: boolean;
+	/** A stranger's view: fronts only — no flipping, no badges. */
+	publicView?: boolean;
 	/** Space members, for @mentions. */
 	members?: Mentionable[];
 	onMove?: (itemId: string, x: number, y: number) => void;
@@ -60,6 +62,7 @@ export function Board({
 	items,
 	currentUserId,
 	frozen,
+	publicView,
 	members,
 	onMove,
 	onResize,
@@ -78,7 +81,7 @@ export function Board({
 		position: { x: item.x, y: item.y },
 		zIndex: item.z,
 		draggable: !frozen,
-		data: { item, currentUserId, frozen, members, onResize, onLike },
+		data: { item, currentUserId, frozen, publicView, members, onResize, onLike },
 	});
 
 	const [nodes, setNodes] = useState<BoardNode[]>(() => items.map(toNode));
@@ -107,7 +110,7 @@ export function Board({
 				return node;
 			});
 		});
-	}, [items, currentUserId, frozen, members]);
+	}, [items, currentUserId, frozen, publicView, members]);
 
 	// Delete/Backspace takes the selected cards you authored off the board.
 	useEffect(() => {

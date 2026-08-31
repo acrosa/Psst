@@ -17,6 +17,8 @@ export type BoardNodeData = {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
+	/** A stranger's view: fronts only — no flipping, no badges. */
+	publicView?: boolean;
 	/** Space members, for rendering and completing @mentions. */
 	members?: Mentionable[];
 	onResize?: (itemId: string, scale: number) => void;
@@ -100,10 +102,15 @@ export function PostcardNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
-			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			badges={
+				data.publicView ? undefined : (
+					<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />
+				)
+			}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			flippable={!data.publicView}
 			onToggle={() => setFlipped((f) => !f)}
 			front={front}
 			back={
@@ -163,10 +170,15 @@ export function SlipNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
-			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			badges={
+				data.publicView ? undefined : (
+					<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />
+				)
+			}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			flippable={!data.publicView}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div className="relative h-full w-full">
@@ -367,10 +379,15 @@ export function AudioNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
-			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			badges={
+				data.publicView ? undefined : (
+					<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />
+				)
+			}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			flippable={!data.publicView}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div className="flex h-full w-full items-center gap-3.5 rounded-[22px] bg-card px-4 shadow-card">
@@ -710,10 +727,15 @@ export function PrintNode({ data }: BoardNodeProps) {
 			height={size.h}
 			rotation={item.rotation}
 			flipped={flipped}
-			badges={<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />}
+			badges={
+				data.publicView ? undefined : (
+					<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />
+				)
+			}
 			scale={item.scale}
 			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			flippable={!data.publicView}
 			onToggle={() => setFlipped((f) => !f)}
 			front={
 				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2.5 pb-8 shadow-card">

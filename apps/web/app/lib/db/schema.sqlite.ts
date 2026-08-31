@@ -145,6 +145,7 @@ export const canvases = sqliteTable(
 			.notNull()
 			.references(() => spaces.id, { onDelete: 'cascade' }),
 		date: text('date').notNull(),
+		shareToken: text('share_token').unique(),
 		createdAt: createdAt().notNull(),
 	},
 	(t) => [unique('canvases_space_date_unique').on(t.spaceId, t.date)],

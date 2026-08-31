@@ -6,6 +6,7 @@ import {
 	ProfileIcon,
 	SettingsIcon,
 	SignOutIcon,
+	ShareIcon,
 	SpacesIcon,
 	TimelineIcon,
 } from '~/components/icons';
@@ -17,7 +18,7 @@ export type MenuLink = {
 	label: string;
 	to?: string;
 	onClick?: () => void;
-	icon?: 'settings' | 'invite' | 'timeline' | 'spaces';
+	icon?: 'settings' | 'invite' | 'timeline' | 'spaces' | 'share';
 	/** Rendered only below the sm breakpoint (the header keeps it on desktop). */
 	mobileOnly?: boolean;
 };
@@ -27,6 +28,7 @@ const MENU_ICONS = {
 	invite: InviteIcon,
 	timeline: TimelineIcon,
 	spaces: SpacesIcon,
+	share: ShareIcon,
 } as const;
 
 const itemClasses =

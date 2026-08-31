@@ -21,6 +21,7 @@ export {
 	Play as PlayIcon,
 	CornerUpLeft as FlipBackIcon,
 	LayoutGrid as SpacesIcon,
+	Share as ShareIcon,
 	Settings2 as SettingsIcon,
 	Pencil as PencilIcon,
 	Smile as SmileIcon,
