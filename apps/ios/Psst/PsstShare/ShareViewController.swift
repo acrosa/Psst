@@ -42,6 +42,12 @@ private enum ShareConfig {
 	}
 }
 
+struct SpaceInfo: Decodable, Identifiable, Hashable {
+	let id: String
+	let name: String
+	let emoji: String
+}
+
 // MARK: - What's being dropped
 
 private enum Payload {
@@ -69,15 +75,21 @@ final class ShareViewController: UIViewController {
 			sheet.prefersGrabberVisible = true
 			sheet.preferredCornerRadius = 24
 		}
+		clearContainerBackgrounds()
 	}
 
-	override func viewDidAppear(_ animated: Bool) {
-		super.viewDidAppear(animated)
-		// The system wraps extension UI in opaque container views — clear the
-		// chain so the app behind stays visible and the card reads as a tent.
-		var ancestor = view.superview
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		// Before every paint: the system wraps extension UI in opaque
+		// containers that would otherwise flash white, then block the host.
+		clearContainerBackgrounds()
+	}
+
+	private func clearContainerBackgrounds() {
+		var ancestor: UIView? = view
 		while let current = ancestor {
 			current.backgroundColor = .clear
+			current.isOpaque = false
 			ancestor = current.superview
 		}
 	}
@@ -115,7 +127,9 @@ private struct ShareSheetView: View {
 	let cancel: () -> Void
 
 	@State private var state: SheetState = .loading
-	@State private var spaceLabel: String?
+	@State private var spaces: [SpaceInfo] = []
+	@State private var selected: SpaceInfo?
+	@State private var appeared = false
 
 	private let paper = Color(red: 0xFA / 255, green: 0xF6 / 255, blue: 0xEF / 255)
 	private let ink = Color(red: 0x40 / 255, green: 0x38 / 255, blue: 0x2F / 255)
@@ -124,10 +138,17 @@ private struct ShareSheetView: View {
 
 	var body: some View {
 		ZStack(alignment: .bottom) {
-			Color.black.opacity(0.001)
+			Color.black.opacity(appeared ? 0.28 : 0)
 				.ignoresSafeArea()
 				.onTapGesture(perform: cancel)
 			card
+				.offset(y: appeared ? 0 : 120)
+				.opacity(appeared ? 1 : 0)
+		}
+		.onAppear {
+			withAnimation(.spring(duration: 0.38, bounce: 0.16)) {
+				appeared = true
+			}
 		}
 	}
 
@@ -151,16 +172,38 @@ private struct ShareSheetView: View {
 					.frame(height: 120)
 			case .ready(let payload):
 				preview(for: payload)
-					.frame(maxWidth: .infinity, minHeight: 120)
+					.frame(maxWidth: .infinity, minHeight: 110)
+				if spaces.count > 1 {
+					Menu {
+						ForEach(spaces) { space in
+							Button("\(space.emoji) \(space.name)") { selected = space }
+						}
+					} label: {
+						HStack(spacing: 6) {
+							Text(selected.map { "to \($0.emoji) \($0.name)" } ?? "pick a space")
+								.font(.system(size: 14, weight: .medium))
+							Image(systemName: "chevron.down")
+								.font(.system(size: 10, weight: .semibold))
+						}
+						.foregroundStyle(inkSoft)
+						.padding(.horizontal, 12)
+						.padding(.vertical, 7)
+						.overlay(Capsule().stroke(inkSoft.opacity(0.35), lineWidth: 1))
+					}
+				}
 				Button {
 					post(payload)
 				} label: {
-					Text(spaceLabel.map { "Drop onto \($0)" } ?? "Drop it on the board")
-						.font(.system(size: 17, weight: .semibold))
-						.frame(maxWidth: .infinity)
-						.frame(height: 50)
-						.background(accent, in: Capsule())
-						.foregroundStyle(.white)
+					Text(
+						spaces.count > 1
+							? "Drop it there"
+							: selected.map { "Drop onto \($0.emoji) \($0.name)" } ?? "Drop it on the board",
+					)
+					.font(.system(size: 17, weight: .semibold))
+					.frame(maxWidth: .infinity)
+					.frame(height: 50)
+					.background(accent, in: Capsule())
+					.foregroundStyle(.white)
 				}
 			case .posting:
 				ProgressView("Dropping…")
@@ -242,7 +285,13 @@ private struct ShareSheetView: View {
 			state = .failed("Sign in to psst first, then share again.")
 			return
 		}
-		Task { spaceLabel = await fetchSpaceLabel() }
+		Task {
+			if let fetched = try? await fetchSpaces(), !fetched.isEmpty {
+				spaces = fetched
+				selected =
+					fetched.first { $0.id == ShareConfig.lastSpaceId } ?? fetched.first
+			}
+		}
 
 		let attachments = (context?.inputItems as? [NSExtensionItem])?
 			.flatMap { $0.attachments ?? [] } ?? []
@@ -315,31 +364,23 @@ private struct ShareSheetView: View {
 		}
 	}
 
-	private func fetchSpaceLabel() async -> String? {
-		guard let board = try? await fetchBoard() else { return nil }
-		return "\(board.space.emoji) \(board.space.name)"
+	private struct SpacesResponse: Decodable {
+		let spaces: [SpaceInfo]
 	}
 
-	private struct BoardInfo: Decodable {
-		let space: Space
-		struct Space: Decodable {
-			let id: String
-			let name: String
-			let emoji: String
-		}
-	}
-
-	private func fetchBoard() async throws -> BoardInfo {
-		var request = URLRequest(url: ShareConfig.baseURL.appending(path: "/api/board"))
+	private func fetchSpaces() async throws -> [SpaceInfo] {
+		var request = URLRequest(url: ShareConfig.baseURL.appending(path: "/api/spaces"))
 		request.httpShouldHandleCookies = false
 		request.setValue("Bearer \(ShareConfig.bearerToken ?? "")", forHTTPHeaderField: "Authorization")
 		let (data, _) = try await URLSession.shared.data(for: request)
-		return try JSONDecoder().decode(BoardInfo.self, from: data)
+		return try JSONDecoder().decode(SpacesResponse.self, from: data).spaces
 	}
 
 	private func resolveSpaceId() async throws -> String {
+		if let selected { return selected.id }
 		if let last = ShareConfig.lastSpaceId { return last }
-		return try await fetchBoard().space.id
+		if let first = try await fetchSpaces().first { return first.id }
+		throw URLError(.resourceUnavailable)
 	}
 
 	private func authorizedPost(spaceId: String) -> URLRequest {

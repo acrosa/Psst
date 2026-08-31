@@ -26,6 +26,7 @@ export default [
 	route('api/profile', 'routes/api.profile.ts'),
 	route('api/devices', 'routes/api.devices.ts'),
 	route('api/board', 'routes/api.board.ts'),
+	route('api/spaces', 'routes/api.spaces.ts'),
 	route('auth/continue', 'routes/auth.continue.ts'),
 	route('health', 'routes/health.ts'),
 	route('.well-known/apple-app-site-association', 'routes/aasa.ts'),
