@@ -42,7 +42,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-	const user = await requireUser(request);
+	// getUser, not requireUser: a waitlisted person with a valid invite is
+	// exactly who this door is for — joining is what accepts them.
+	const user = await getUser(request);
+	if (!user) {
+		throw redirect(`/login?next=${encodeURIComponent(`/invite/${params.token}`)}`);
+	}
 	const result = await acceptInvite({ token: params.token, userId: user.id });
 
 	if (result.status === 'joined' || result.status === 'already-member') {

@@ -18,3 +18,10 @@ export function withDb<T>(fn: (db: Database.Database) => T): T {
 export function nowSeconds(): number {
 	return Math.floor(Date.now() / 1000);
 }
+
+/** Lift the waitlist rope for a user — most specs test life inside. */
+export function acceptUser(email: string): void {
+	withDb((db) => {
+		db.prepare('UPDATE users SET accepted_at = ? WHERE email = ?').run(nowSeconds(), email);
+	});
+}

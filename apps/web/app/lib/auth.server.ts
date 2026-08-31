@@ -1,7 +1,9 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer } from 'better-auth/plugins';
+import { eq } from 'drizzle-orm';
 import { redirect } from 'react-router';
+import { isAdminEmail } from './admin.server';
 import { db, schema, useSqlite } from './db/client.server';
 import { env } from './env.server';
 
@@ -89,6 +91,16 @@ export async function requireUser(request: Request): Promise<SessionUser> {
 	if (!user) {
 		const url = new URL(request.url);
 		throw redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
+	}
+	// The velvet rope: signed up but not yet let in → the waitlist page.
+	if (!isAdminEmail(user.email)) {
+		const [row] = await db
+			.select({ acceptedAt: schema.users.acceptedAt })
+			.from(schema.users)
+			.where(eq(schema.users.id, user.id));
+		if (!row?.acceptedAt) {
+			throw redirect('/waitlist');
+		}
 	}
 	return user;
 }

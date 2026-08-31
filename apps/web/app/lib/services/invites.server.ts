@@ -140,6 +140,13 @@ export async function acceptInvite(args: { token: string; userId: string }): Pro
 		.where(eq(schema.invites.id, invite.id));
 
 	track({ event: 'invite_accepted', icon: '🎉', userId: args.userId, tags: { space: space.name } });
+	// An invite from someone inside is a hand at the door — being let in by a
+	// member counts as being let in (the waitlist gates cold signups only).
+	await db
+		.update(schema.users)
+		.set({ acceptedAt: new Date() })
+		.where(and(eq(schema.users.id, args.userId), isNull(schema.users.acceptedAt)));
+
 	return { status: 'joined', spaceId: space.id };
 }
 

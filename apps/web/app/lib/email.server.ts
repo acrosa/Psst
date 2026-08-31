@@ -90,6 +90,39 @@ export async function sendMentionEmail({
 	await deliver({ to, subject, text, html, logHint: url });
 }
 
+type AcceptedEmailArgs = {
+	to: string;
+	name: string | null;
+};
+
+/** The email everyone on the list is waiting for. */
+export async function sendAcceptedEmail({ to, name }: AcceptedEmailArgs): Promise<void> {
+	const first = name?.split(/\s+/)[0];
+	const subject = '🌷 psst — you\u2019re in';
+	const url = 'https://www.psst.you/spaces';
+	const text = [
+		`psst${first ? ` ${first}` : ''} — your spot opened up.`,
+		'',
+		'Come make your first canvas:',
+		url,
+		'',
+		'Drop links, notes and photos on a shared board; every day becomes a page in your scrapbook.',
+	].join('\n');
+	const html = `
+		<div style="font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 460px; margin: 0 auto; padding: 32px 24px; color: #40382f;">
+			<div style="font-size: 40px; text-align: center;">🌷</div>
+			<h1 style="font-size: 22px; text-align: center; font-weight: 600;">You\u2019re in</h1>
+			<p style="font-size: 15px; line-height: 1.5; color: #8d8375; text-align: center;">
+				psst${first ? ` ${first}` : ''} — your spot opened up. A little shared canvas for the people you whisper to.
+			</p>
+			<p style="text-align: center; margin: 28px 0;">
+				<a href="${url}" style="background: #e2725b; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 500;">Open psst</a>
+			</p>
+			<p style="font-size: 12px; color: #c9bfae; text-align: center;">Not a chat. No pressure. Just keepsakes.</p>
+		</div>`;
+	await deliver({ to, subject, text, html, logHint: url });
+}
+
 async function deliver({
 	to,
 	subject,

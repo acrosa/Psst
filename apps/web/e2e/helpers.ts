@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { acceptUser } from './db-helpers';
 
 export interface TestUser {
 	email: string;
@@ -33,6 +34,12 @@ export async function registerUser(page: Page, user?: TestUser): Promise<TestUse
 	await page.getByLabel(/password/i).fill(testUser.password);
 	await page.getByRole('button', { name: /create account/i }).click();
 
+	// The waitlist holds fresh signups; specs test life inside, so let them in.
+	await page.waitForURL(/\/waitlist$/, { timeout: 45_000 });
+	acceptUser(testUser.email);
+	await page.goto('/spaces');
+	await page.locator('a[href*="/spaces/"]').first().click();
+
 	await page.waitForURL(/\/spaces\/[0-9a-f-]{36}$/, { timeout: 45_000 });
 	await expect(page.getByRole('button', { name: /account menu/i })).toBeVisible();
 
@@ -51,7 +58,7 @@ export async function registerOntoCanvas(
  * Fill that survives a hydration re-render swapping the input out from under
  * us (the classic first-interaction race on a cold dev server).
  */
-async function fillSettled(
+export async function fillSettled(
 	page: Page,
 	locator: ReturnType<Page['getByLabel']>,
 	value: string,

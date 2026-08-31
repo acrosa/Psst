@@ -22,6 +22,7 @@ export const users = pgTable('users', {
 	image: text('image'),
 	emailVerified: boolean('email_verified').default(false),
 	emailMentions: boolean('email_mentions').notNull().default(true),
+	acceptedAt: timestamp('accepted_at'),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
 });
