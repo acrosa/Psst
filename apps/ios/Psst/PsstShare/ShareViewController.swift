@@ -61,6 +61,27 @@ private enum SheetState {
 // MARK: - Principal
 
 final class ShareViewController: UIViewController {
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		// When the host presents us as a real sheet, ask for half of one.
+		if let sheet = sheetPresentationController {
+			sheet.detents = [.medium()]
+			sheet.prefersGrabberVisible = true
+			sheet.preferredCornerRadius = 24
+		}
+	}
+
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		// The system wraps extension UI in opaque container views — clear the
+		// chain so the app behind stays visible and the card reads as a tent.
+		var ancestor = view.superview
+		while let current = ancestor {
+			current.backgroundColor = .clear
+			ancestor = current.superview
+		}
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		let root = ShareSheetView(
