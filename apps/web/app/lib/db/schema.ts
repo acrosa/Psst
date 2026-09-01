@@ -11,6 +11,14 @@ import {
 	uuid,
 } from 'drizzle-orm/pg-core';
 
+/**
+ * Row-Level Security is enabled on every table with no policies attached:
+ * Supabase exposes this schema through PostgREST to the public anon key, and
+ * deny-by-default keeps it empty there. The app connects as the table owner,
+ * which bypasses RLS, so nothing here changes for us. SQLite has no RLS —
+ * this concern is Postgres-only, so schema.sqlite.ts stays as it is.
+ */
+
 // ============================================================================
 // Auth tables (Better Auth)
 // ============================================================================
@@ -25,7 +33,7 @@ export const users = pgTable('users', {
 	acceptedAt: timestamp('accepted_at'),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
-});
+}).enableRLS();
 
 export const sessions = pgTable('sessions', {
 	id: text('id').primaryKey(),
@@ -38,7 +46,7 @@ export const sessions = pgTable('sessions', {
 	userAgent: text('user_agent'),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
-});
+}).enableRLS();
 
 export const accounts = pgTable('accounts', {
 	id: text('id').primaryKey(),
@@ -56,7 +64,7 @@ export const accounts = pgTable('accounts', {
 	password: text('password'),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
-});
+}).enableRLS();
 
 export const verifications = pgTable('verifications', {
 	id: text('id').primaryKey(),
@@ -65,7 +73,7 @@ export const verifications = pgTable('verifications', {
 	expiresAt: timestamp('expires_at').notNull(),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
-});
+}).enableRLS();
 
 // ============================================================================
 // psst: spaces & membership
@@ -80,7 +88,7 @@ export const spaces = pgTable('spaces', {
 		.notNull()
 		.references(() => users.id),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const spaceMembers = pgTable(
 	'space_members',
@@ -97,7 +105,7 @@ export const spaceMembers = pgTable(
 		joinedAt: timestamp('joined_at').defaultNow().notNull(),
 	},
 	(t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
-);
+).enableRLS();
 
 export const invites = pgTable(
 	'invites',
@@ -117,7 +125,7 @@ export const invites = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [index('invites_space_idx').on(t.spaceId)],
-);
+).enableRLS();
 
 // ============================================================================
 // psst: canvases & items
@@ -138,7 +146,7 @@ export const canvases = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [unique('canvases_space_date_unique').on(t.spaceId, t.date)],
-);
+).enableRLS();
 
 export const pushDevices = pgTable('push_devices', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -149,7 +157,7 @@ export const pushDevices = pgTable('push_devices', {
 	platform: text('platform').notNull().default('ios'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const items = pgTable(
 	'items',
@@ -176,7 +184,7 @@ export const items = pgTable(
 		deletedAt: timestamp('deleted_at'),
 	},
 	(t) => [index('items_canvas_idx').on(t.canvasId)],
-);
+).enableRLS();
 
 export const itemUnfurls = pgTable('item_unfurls', {
 	itemId: uuid('item_id')
@@ -191,7 +199,7 @@ export const itemUnfurls = pgTable('item_unfurls', {
 		.notNull()
 		.default('pending'),
 	fetchedAt: timestamp('fetched_at'),
-});
+}).enableRLS();
 
 export const itemComments = pgTable(
 	'item_comments',
@@ -207,7 +215,7 @@ export const itemComments = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [index('item_comments_item_idx').on(t.itemId)],
-);
+).enableRLS();
 
 export const itemReactions = pgTable(
 	'item_reactions',
@@ -223,7 +231,7 @@ export const itemReactions = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [unique('item_reactions_unique').on(t.itemId, t.userId, t.emoji)],
-);
+).enableRLS();
 
 export const itemAssets = pgTable(
 	'item_assets',
@@ -240,7 +248,7 @@ export const itemAssets = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [index('item_assets_item_idx').on(t.itemId)],
-);
+).enableRLS();
 
 // ============================================================================
 // Types

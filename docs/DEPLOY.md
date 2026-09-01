@@ -14,6 +14,21 @@ One stack: **Vercel** (app) + **Supabase** (Postgres) + **Cloudflare R2** (photo
    DATABASE_URL="<session-pooler-string>" pnpm db:migrate
    ```
 
+### Row-Level Security (why every table has it on)
+
+Supabase serves the `public` schema over PostgREST to the project's **anon
+key**, which is public by design. Without RLS, that key is full read/write on
+every table — Supabase's linter emails about this ("Table publicly
+accessible"). Every table therefore ships with RLS enabled and **no policies**:
+PostgREST sees nothing, while the app is unaffected because it connects as the
+tables' owner, and owners bypass RLS. Migration `0006` also revokes the
+anon/authenticated grants, and refuses to run if the connecting role does not
+own the tables (that would silently blank the live app).
+
+New tables must keep this up: add `.enableRLS()` in `schema.ts` — it is the
+default posture, not an exception. If psst ever adopts the Supabase client SDK,
+these tables need real policies before it can read anything.
+
 ## 2 · Cloudflare R2 — photo storage
 
 1. In the Cloudflare dashboard → **R2**, create a bucket named `psst-uploads`.
