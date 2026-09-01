@@ -123,6 +123,41 @@ export async function sendAcceptedEmail({ to, name }: AcceptedEmailArgs): Promis
 	await deliver({ to, subject, text, html, logHint: url });
 }
 
+type ResetEmailArgs = {
+	to: string;
+	name: string | null;
+	url: string;
+};
+
+/** The way back in — a link that works once, for an hour. */
+export async function sendResetPasswordEmail({ to, name, url }: ResetEmailArgs): Promise<void> {
+	const first = name?.split(/\s+/)[0];
+	const subject = 'psst — a new password';
+	const text = [
+		`psst${first ? ` ${first}` : ''} — someone (hopefully you) asked to reset your password.`,
+		'',
+		'Choose a new one:',
+		url,
+		'',
+		'The link works once, within the hour. If this wasn\u2019t you, ignore this — nothing changes.',
+	].join('\n');
+	const html = `
+		<div style="font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 460px; margin: 0 auto; padding: 32px 24px; color: #40382f;">
+			<div style="font-size: 40px; text-align: center;">🔑</div>
+			<h1 style="font-size: 22px; text-align: center; font-weight: 600;">A new password</h1>
+			<p style="font-size: 15px; line-height: 1.5; color: #8d8375; text-align: center;">
+				Someone (hopefully you) asked to reset the password for <strong style="color:#40382f;">${to}</strong>.
+			</p>
+			<p style="text-align: center; margin: 28px 0;">
+				<a href="${url}" style="background: #e2725b; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 500;">Choose a new password</a>
+			</p>
+			<p style="font-size: 12px; color: #c9bfae; text-align: center;">
+				The link works once, within the hour. If this wasn\u2019t you, ignore this \u2014 nothing changes.
+			</p>
+		</div>`;
+	await deliver({ to, subject, text, html, logHint: url });
+}
+
 async function deliver({
 	to,
 	subject,

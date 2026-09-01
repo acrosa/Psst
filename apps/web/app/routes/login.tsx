@@ -107,6 +107,9 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
 
 			<Form method="post" className="mt-4 grid gap-4">
 				<FormError error={actionData?.error} />
+				{searchParams.get('reset') ? (
+					<p className="text-ink-soft text-sm">Password saved — sign in with your new one.</p>
+				) : null}
 
 				<div className="grid gap-1.5">
 					<Label htmlFor="email">Email</Label>
@@ -121,7 +124,15 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
 				</div>
 
 				<div className="grid gap-1.5">
-					<Label htmlFor="password">Password</Label>
+					<div className="flex items-baseline justify-between gap-2">
+						<Label htmlFor="password">Password</Label>
+						<Link
+							to="/forgot-password"
+							className="text-ink-faint text-xs underline underline-offset-2 transition hover:text-ink-soft"
+						>
+							Forgot it?
+						</Link>
+					</div>
 					<Input
 						id="password"
 						name="password"

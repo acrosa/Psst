@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'react-router';
 import { isAdminEmail } from './admin.server';
 import { db, schema, useSqlite } from './db/client.server';
+import { sendResetPasswordEmail } from './email.server';
 import { env } from './env.server';
 
 export const auth = betterAuth({
@@ -25,6 +26,9 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
+		async sendResetPassword({ user, url }) {
+			await sendResetPasswordEmail({ to: user.email, name: user.name ?? null, url });
+		},
 	},
 
 	socialProviders: {
