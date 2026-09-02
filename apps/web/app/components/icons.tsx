@@ -6,6 +6,7 @@
 export {
 	MoveDiagonal2 as ResizeIcon,
 	ArrowUpRight as ArrowUpRightIcon,
+	Link2 as LinkIcon,
 	CalendarDays as TimelineIcon,
 	Camera as CameraIcon,
 	UserRound as ProfileIcon,

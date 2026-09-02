@@ -1,24 +1,31 @@
 import { useEffect, useRef } from 'react';
+import { cn } from '~/lib/cn';
 
 /**
- * Daylight — a sunlit wall behind the landing page.
+ * Daylight — morning light on a wall, laid over the whole page.
+ *
+ * The canvas sits on top of the landing page with `mix-blend-mode: overlay`
+ * and paints a light map: 0.5 leaves the page alone, brighter lifts it,
+ * darker shades it. So the bands of sun cross the wall, the card, the
+ * stickers — everything on the same plane, the way a real wall reads.
  *
  * Two WebGL passes, after basement.studio's "Creating Daylight | The
- * Shadows" (2024): the way they rendered the soft shadows on Daylight's site.
+ * Shadows" (2024), the way they rendered Daylight's soft shadows:
  *
- * 1. The occluder map. Everything between the sun and the wall — the
- *    window's mullions, a few sprigs swaying in the breeze — is drawn as
- *    (distance from the wall, 1). This is what their light camera "sees".
+ * 1. The occluder map. Whatever hangs between the sun and the wall — a few
+ *    sprigs swaying in the breeze — is drawn as (distance from the wall, 1).
+ *    This is what their light camera "sees".
  * 2. The shadow pass. For each pixel, a Vogel disk (golden-angle spiral,
  *    rotated by per-pixel noise) samples the map. Each occluder found casts
- *    a shadow whose radius grows with its distance from the wall, and it
- *    darkens the pixel only if that radius reaches it — near objects weigh
- *    heavily, far ones lightly. So the nearest leaves stay crisp and dark
- *    while distant ones spread into faint blur, the way a real wall reads.
+ *    a shadow whose radius grows with its distance from the wall, weighted
+ *    by a kernel normalised per radius. Near leaves stay crisp and dark;
+ *    far ones spread wide and faint. The window blinds that throw the bands
+ *    are farther still, so they are drawn as a plain soft profile.
  *
- * The sun follows the visitor's clock, dark mode is the wall after
- * sundown, reduced motion paints one still frame, and without WebGL the
- * plain paper shows. `?hour=17` pins the sun for previews.
+ * The sun follows the visitor's clock (the bands drift and warm through the
+ * day), dark mode is the wall after sundown, reduced motion paints one still
+ * frame, and without WebGL the canvas stays clear and the page is simply
+ * unlit. `?hour=17` pins the sun for previews.
  */
 
 const VERT = `
@@ -26,8 +33,7 @@ attribute vec2 a_pos;
 void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 `;
 
-// Shared by both passes: the wall's coordinate space and the window's
-// projection onto it.
+// Shared by both passes: the wall's coordinate space.
 const COMMON = `
 precision highp float;
 
@@ -58,34 +64,13 @@ mat2 rot(float a) {
 	return mat2(c, -s, s, c);
 }
 
-float sdBox(vec2 p, vec2 b, float r) {
-	vec2 q = abs(p) - b + r;
-	return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-}
-
 // Wall space: origin at the centre, 1 unit = the short side of the screen.
 vec2 wall(vec2 frag) {
 	float m = min(u_res.x, u_res.y);
 	float portrait = step(u_res.x / u_res.y, 1.0);
 	// A phone sees the wall closer up.
-	return (frag - 0.5 * u_res) / m * mix(1.0, 0.78, portrait);
+	return (frag - 0.5 * u_res) / m * mix(1.0, 0.72, portrait);
 }
-
-// Window space: the sun projects the window onto the wall, skewed by its
-// azimuth and stretched as it sinks.
-vec2 window(vec2 p) {
-	float aspect = u_res.x / u_res.y;
-	float portrait = step(aspect, 1.0);
-	float az = u_sun.x;
-	float el = u_sun.y;
-	vec2 wc = vec2(mix(0.27, 0.10, portrait) * aspect - 0.04 * az, 0.04 + 0.05 * (1.0 - el));
-	vec2 w = p - wc;
-	w.x -= w.y * az * 0.42;
-	w.y /= 1.0 + (1.0 - el) * 0.5;
-	return rot(az * 0.05) * w;
-}
-
-const vec2 EXT = vec2(0.25, 0.36); // the window's half extents
 `;
 
 // Pass 1 — what the light camera sees: red = distance from the wall (0 =
@@ -130,27 +115,23 @@ void occlude(inout vec2 map, float d, float distance) {
 }
 
 void main() {
-	vec2 w = window(wall(gl_FragCoord.xy));
+	vec2 p = wall(gl_FragCoord.xy);
+	float aspect = u_res.x / u_res.y;
 	float t = u_time;
 	vec2 map = vec2(1.0, 0.0);
 
-	// Mullions: one cross, two hairline sashes — far from the wall.
-	occlude(map, min(abs(w.x), abs(w.y)) - 0.013, 0.9);
-	occlude(map, abs(abs(w.y) - EXT.y * 0.52) - 0.005, 0.9);
-
-	// Three sprigs at three distances: crisp, soft, softer.
-	occlude(map, sprig((w - vec2(-0.20, -0.44)) * 1.1, t, 0.0, 0.62), 0.06);
-	occlude(map, sprig(rot(1.15) * (w - vec2(0.36, -0.12)) * 0.95, t, 2.1, 0.66), 0.4);
-	occlude(map, sprig(rot(2.55) * (w - vec2(-0.30, 0.44)) * 1.15, t, 4.2, 0.5), 0.8);
+	// A plant by the window, top left; a hanging sprig, top right.
+	occlude(map, sprig(rot(0.55) * (p - vec2(-0.55 * aspect, 0.02)) * 1.0, t, 0.0, 0.66), 0.35);
+	occlude(map, sprig(rot(-0.35) * (p - vec2(-0.30 * aspect, 0.22)) * 1.2, t, 2.1, 0.5), 0.7);
+	occlude(map, sprig(rot(2.75) * (p - vec2(0.36 * aspect, 0.62)) * 1.05, t, 4.2, 0.6), 0.5);
 
 	gl_FragColor = vec4(map, 0.0, 1.0);
 }
 `;
 
-// Pass 2 — Vogel disk shadows over the occluder map, then the light.
+// Pass 2 — Vogel disk shadows over the occluder map, then the light map.
 const SHADOW_FRAG = `${COMMON}
 uniform sampler2D u_map;
-uniform vec3 u_paper;
 uniform float u_night;   // 0 = day, 1 = after sundown
 
 const float GOLDEN = PI * (3.0 - sqrt(5.0));
@@ -204,51 +185,44 @@ float shadowAt(vec2 frag) {
 	return clamp(shadow, 0.0, 0.85);
 }
 
+// Sun through the blinds: bands climbing to the right, edges gone soft
+// because the blinds are the farthest thing from the wall.
+float bands(vec2 p, float t) {
+	float az = u_sun.x;
+	vec2 dir = rot(-0.62 + az * 0.08) * vec2(0.0, 1.0);
+	float s = dot(p, dir) + t * 0.0025 + noise(p * 1.6 + t * 0.04) * 0.008;
+	float f = fract(s / 0.44);
+	float b = 0.5 + 0.5 * cos(f * 2.0 * PI);
+	return smoothstep(0.22, 0.82, b);
+}
+
 void main() {
 	vec2 frag = gl_FragCoord.xy;
 	vec2 p = wall(frag);
-	vec2 w = window(p);
 	float t = u_time;
 	float el = u_sun.y;
 
-	// The window aperture. Its frame sits farthest from the wall of all,
-	// so the edge of the light is the softest thing on screen.
-	float glass = 1.0 - smoothstep(-0.06, 0.06, sdBox(w, EXT, 0.02));
-	float shadow = shadowAt(frag);
+	// The pool of light: brightest top left, falling off toward the corners.
+	vec2 c = (p - vec2(-0.1, 0.28)) * vec2(0.55, 1.0);
+	float pool = 1.0 - 0.42 * smoothstep(0.3, 1.25, length(c));
+	float light = pool * (0.62 + 0.38 * bands(p, t));
+	// Shadows exist only where there is light to block.
+	float shadow = shadowAt(frag) * light;
 
-	// The wall in ambient light sits a shade under the page; the sun lifts
-	// the paper and warms it — amber at the horizon, pale gold at noon.
-	vec3 ambient = u_paper * mix(0.962, 0.9, u_night);
-	vec3 sunLow = vec3(1.06, 0.94, 0.83);
-	vec3 sunHigh = vec3(1.035, 1.0, 0.95);
-	vec3 sun = mix(sunLow, sunHigh, smoothstep(0.0, 0.8, el));
-	vec3 moon = vec3(1.55, 1.65, 1.9);
-	vec3 lit = u_paper * mix(sun, moon, u_night);
+	// The light map, around neutral grey. Amber at the edges of the day,
+	// paler at noon; softer after sundown so the dark wall keeps its depth.
+	float amp = mix(0.34, 0.24, u_night);
+	float v = 0.5 + (light - 0.55) * amp - shadow * amp * 0.75;
+	vec3 warm = mix(vec3(0.05, 0.0, -0.05), vec3(0.02, 0.0, -0.02), smoothstep(0.0, 0.8, el));
+	vec3 col = vec3(v) + warm * (light - 0.5) * (1.0 - u_night);
 
-	// A breath of air moving through the beam.
-	float haze = 0.94 + 0.06 * noise(p * 3.0 + vec2(t * 0.05, -t * 0.03));
-	float beam = glass * haze;
-
-	// Inside the beam a shadow is the wall again, a touch deeper.
-	vec3 col = mix(ambient, lit, beam * (1.0 - shadow));
-	col = mix(col, ambient * 0.975, beam * shadow * 0.5);
-	// Sunlight spills faintly past the frame.
-	float spill = (1.0 - smoothstep(-0.2, 0.2, sdBox(w, EXT + 0.1, 0.12))) * (1.0 - glass);
-	col = mix(col, lit, spill * mix(0.12, 0.1, u_night));
-
-	// Film grain so the gradients never band.
-	col += (hash(frag + fract(t)) - 0.5) * 0.012;
+	// Plaster: fine grain, then a slower mottle.
+	col += (hash(frag) - 0.5) * 0.03;
+	col += (noise(p * 70.0) - 0.5) * 0.014;
 
 	gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
 `;
-
-function parseColor(value: string): [number, number, number] | null {
-	const hex = value.trim().match(/^#([0-9a-f]{6})$/i);
-	if (!hex) return null;
-	const n = Number.parseInt(hex[1], 16);
-	return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-}
 
 /** Sun position from the local clock: azimuth east→west, elevation 0..1. */
 function sunNow(hourOverride: number | null): [number, number] {
@@ -311,7 +285,7 @@ function mount(canvas: HTMLCanvasElement): (() => void) | undefined {
 	if (!occluderPass || !shadowPass) return;
 	const shared = ['u_res', 'u_time', 'u_sun'];
 	const occluderU = uniforms(gl, occluderPass, shared);
-	const shadowU = uniforms(gl, shadowPass, [...shared, 'u_map', 'u_paper', 'u_night']);
+	const shadowU = uniforms(gl, shadowPass, [...shared, 'u_map', 'u_night']);
 
 	// One triangle covers the viewport; both programs read the same attribute.
 	const buffer = gl.createBuffer();
@@ -342,14 +316,12 @@ function mount(canvas: HTMLCanvasElement): (() => void) | undefined {
 		hourParam !== null && !Number.isNaN(Number(hourParam)) ? Number(hourParam) : null;
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 	const start = performance.now();
-	let paper: [number, number, number] = [0.98, 0.965, 0.937];
 	let night = 0;
 	let frame = 0;
 	let lastDraw = 0;
 	let disposed = false;
 
 	function theme() {
-		paper = parseColor(getComputedStyle(root).getPropertyValue('--color-paper')) ?? paper;
 		night = root.classList.contains('dark') ? 1 : 0;
 	}
 
@@ -393,7 +365,6 @@ function mount(canvas: HTMLCanvasElement): (() => void) | undefined {
 		gl.uniform2f(shadowU.u_res, canvas.width, canvas.height);
 		gl.uniform1f(shadowU.u_time, time);
 		gl.uniform2f(shadowU.u_sun, sun[0], sun[1]);
-		gl.uniform3f(shadowU.u_paper, paper[0], paper[1], paper[2]);
 		gl.uniform1f(shadowU.u_night, night);
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -439,7 +410,8 @@ function mount(canvas: HTMLCanvasElement): (() => void) | undefined {
 	};
 }
 
-export function Daylight() {
+/** Lay it over a page: `fixed inset-0 pointer-events-none mix-blend-overlay`. */
+export function Daylight({ className }: { className?: string }) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	useEffect(() => {
 		const canvas = ref.current;
@@ -451,7 +423,10 @@ export function Daylight() {
 		<canvas
 			ref={ref}
 			aria-hidden
-			className="block h-full w-full opacity-0 transition-opacity duration-[1400ms] ease-out data-lit:opacity-100"
+			className={cn(
+				'block h-full w-full opacity-0 transition-opacity duration-[1400ms] ease-out data-lit:opacity-100',
+				className,
+			)}
 		/>
 	);
 }

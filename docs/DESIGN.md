@@ -106,5 +106,6 @@ Lowercase whispers, warm and brief: "psst — drop something here", "tucking it 
 - `scroll timeline 1–2` — tick-rail scrollbar *(shipped: the scrapbook rail)*
 - `stickers idea (border)` — die-cut white borders *(shipped: seeded hand-cut pads)*
 - `type font` — display type as a single confident gesture
+- `home2 landing` — the wall: kraft card and keepsakes on terracotta, morning light through blinds *(shipped: `/home2`, the Daylight shader)*
 
 Concept seeds are directions the inspiration points at — not commitments. Each ships only when it can be perfect.
