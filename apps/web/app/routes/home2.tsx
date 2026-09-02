@@ -42,7 +42,7 @@ const CSS = `
 	--white: #f4eee4;
 	--terra: #b2582f;
 	--ink: #4a423a;
-	--u: 2.4cqw;
+	--u: 3cqw;
 }
 :root.dark .home2 {
 	--wall: #5a2c1c;
@@ -89,31 +89,32 @@ export default function Home2() {
 			<main className="relative z-10 flex min-h-svh items-center justify-center">
 				<div className="@container relative aspect-[9/16] w-full max-w-[calc(100svh*9/16)] sm:aspect-[16/9] sm:max-w-[calc(100svh*16/9)]">
 					{/* The card */}
-					<section className="h2-shadow absolute top-[24%] left-[8%] aspect-square w-[84%] rotate-[-0.6deg] bg-[var(--kraft)] sm:top-[13%] sm:left-[27.7%] sm:w-[44.3%]">
+					<section className="h2-shadow absolute top-[18%] left-[8%] aspect-[4/5] w-[84%] rotate-[-0.6deg] bg-[var(--kraft)] sm:top-[13%] sm:left-[27.7%] sm:aspect-square sm:w-[44.3%]">
 						<div className="h2-grain absolute inset-0" aria-hidden />
-						<div className="absolute inset-0 flex flex-col items-center justify-center gap-[calc(var(--u)*2)] text-center text-[var(--terra)]">
-							<h1 className="font-serif text-[calc(var(--u)*2.7)] uppercase leading-none tracking-[0.34em]">
-								psst
-							</h1>
-							<p className="text-[calc(var(--u)*1.15)] leading-snug">
-								A private space
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-[calc(var(--u)*2.2)] px-[calc(var(--u)*3)] text-center text-[var(--terra)]">
+							<h1 className="font-serif text-[calc(var(--u)*2.5)] leading-[1.12] sm:text-[calc(var(--u)*2.9)]">
+								A private space for
 								<br />
-								for the things you like.
+								the things you like.
+							</h1>
+							<p className="max-w-[calc(var(--u)*30)] text-[calc(var(--u)*1.2)] leading-snug opacity-90 sm:text-[calc(var(--u)*1.3)]">
+								One canvas a day for you and a few friends. Drop links, notes, photos and stickers —
+								tomorrow it becomes a page in your scrapbook.
 							</p>
-						</div>
-						<div className="absolute right-0 bottom-[9%] left-0 flex items-center justify-center gap-[calc(var(--u)*1.6)]">
-							<Link
-								to="/register"
-								className="rounded-full bg-[var(--terra)] px-[calc(var(--u)*1.6)] py-[calc(var(--u)*0.7)] font-medium text-[calc(var(--u)*1.05)] text-[var(--kraft)] transition hover:brightness-95"
-							>
-								Start a canvas
-							</Link>
-							<Link
-								to="/login"
-								className="text-[calc(var(--u)*1.05)] text-[var(--terra)] transition hover:opacity-80"
-							>
-								Sign in
-							</Link>
+							<div className="mt-[calc(var(--u)*1)] flex items-center justify-center gap-[calc(var(--u)*2)]">
+								<Link
+									to="/register"
+									className="rounded-full bg-[var(--terra)] px-[calc(var(--u)*2.4)] py-[calc(var(--u)*1.1)] font-medium text-[calc(var(--u)*1.35)] text-[var(--kraft)] transition hover:brightness-95"
+								>
+									Start a canvas
+								</Link>
+								<Link
+									to="/login"
+									className="font-medium text-[calc(var(--u)*1.35)] text-[var(--terra)] transition hover:opacity-80"
+								>
+									Sign in
+								</Link>
+							</div>
 						</div>
 					</section>
 
@@ -141,7 +142,7 @@ export default function Home2() {
 					</div>
 
 					{/* Invite link */}
-					<div className="h2-shadow absolute top-[81%] left-[3%] flex w-[58%] rotate-[-9deg] items-center gap-[calc(var(--u)*0.9)] rounded-[calc(var(--u)*1.1)] bg-[var(--kraft-light)] px-[calc(var(--u)*1.4)] py-[calc(var(--u)*1.5)] text-[calc(var(--u)*1.2)] text-[var(--ink)] sm:top-[68%] sm:left-[5.5%] sm:w-[27%]">
+					<div className="h2-shadow absolute top-[86%] left-[3%] flex w-[64%] rotate-[-9deg] items-center gap-[calc(var(--u)*0.9)] rounded-[calc(var(--u)*1.1)] bg-[var(--kraft-light)] px-[calc(var(--u)*1.4)] py-[calc(var(--u)*1.5)] text-[calc(var(--u)*1.1)] text-[var(--ink)] sm:top-[68%] sm:left-[5.5%] sm:w-[27%] sm:text-[calc(var(--u)*1.2)]">
 						<LinkIcon
 							className="h-[calc(var(--u)*1.4)] w-[calc(var(--u)*1.4)] shrink-0"
 							strokeWidth={2.2}
@@ -174,7 +175,7 @@ export default function Home2() {
 					</figure>
 
 					{/* A scrap */}
-					<div className="absolute top-[71%] left-[58%] aspect-[300/260] w-[40%] rotate-[4deg] sm:top-[68%] sm:left-[75.5%] sm:w-[18.5%]">
+					<div className="absolute top-[68%] left-[60%] aspect-[300/260] w-[40%] rotate-[4deg] sm:top-[68%] sm:left-[75.5%] sm:w-[18.5%]">
 						<svg
 							viewBox="0 0 300 260"
 							className="h2-cut absolute inset-0 h-full w-full"
@@ -190,7 +191,7 @@ export default function Home2() {
 					{/* A heart */}
 					<svg
 						viewBox="0 0 100 100"
-						className="h2-cut absolute top-[84%] left-[40%] aspect-square w-[20%] rotate-[-12deg] sm:top-[80%] sm:left-[69.5%] sm:w-[10.5%]"
+						className="h2-cut absolute top-[87%] left-[42%] aspect-square w-[20%] rotate-[-12deg] sm:top-[80%] sm:left-[69.5%] sm:w-[10.5%]"
 						aria-hidden="true"
 					>
 						<path
