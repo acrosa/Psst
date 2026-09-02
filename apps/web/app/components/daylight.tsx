@@ -89,16 +89,18 @@ float sdSegment(vec2 p, vec2 a, vec2 b, float w) {
 	return length(pa - ba * h) - w;
 }
 
-// One sprig: a stem with leaves along it, swaying with the breeze.
+// One sprig: a stem with leaves along it, swaying with the breeze. Gusts
+// come and go (slow noise), and the stem rocks inside them.
 float sprig(vec2 p, float t, float phase, float len) {
-	float sway = sin(t * 0.43 + phase) * 0.06 + noise(vec2(t * 0.11, phase)) * 0.08 - 0.04;
+	float gust = noise(vec2(t * 0.28, phase)) * 2.0 - 1.0;
+	float sway = sin(t * 1.1 + phase) * (0.05 + 0.07 * gust) + gust * 0.08;
 	p = rot(sway) * p;
 	float d = sdSegment(p, vec2(0.0), vec2(0.0, len), 0.0045);
 	for (int i = 0; i < 6; i++) {
 		float fi = float(i);
 		float along = 0.1 + fi * (len - 0.06) / 5.0;
 		float side = mod(fi, 2.0) * 2.0 - 1.0;
-		float flutter = sin(t * 0.9 + phase + fi * 1.7) * 0.08;
+		float flutter = sin(t * 2.3 + phase + fi * 1.7) * 0.14 + sin(t * 3.7 + fi * 2.9) * 0.05;
 		vec2 q = p - vec2(0.0, along);
 		// Leaves lean upward off the stem, alternating sides.
 		q = rot(side * (1.25 + flutter) - 1.5708) * q;
@@ -190,7 +192,9 @@ float shadowAt(vec2 frag) {
 float bands(vec2 p, float t) {
 	float az = u_sun.x;
 	vec2 dir = rot(-0.62 + az * 0.08) * vec2(0.0, 1.0);
-	float s = dot(p, dir) + t * 0.0025 + noise(p * 1.6 + t * 0.04) * 0.008;
+	// The curtain breathes: the bands drift and ripple with the breeze.
+	float s = dot(p, dir) + t * 0.004 + sin(t * 0.5 + p.y * 1.4) * 0.012
+		+ (noise(p * 1.6 + t * 0.18) - 0.5) * 0.03;
 	float f = fract(s / 0.44);
 	float b = 0.5 + 0.5 * cos(f * 2.0 * PI);
 	return smoothstep(0.22, 0.82, b);
