@@ -248,8 +248,6 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 				user={user}
 				menuLinks={[
 					{ label: 'Invite', onClick: () => setInviting(true), icon: 'invite', mobileOnly: true },
-					{ label: 'Share this day', onClick: () => setSharing(true), icon: 'share' },
-					{ label: 'Space settings', to: `/spaces/${space.id}/settings`, icon: 'settings' },
 				]}
 			>
 				<div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -259,6 +257,8 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						emoji={space.emoji}
 						name={space.name}
 						subtitle={`Today · ${formatDay(board.date)}`}
+						onShare={() => setSharing(true)}
+						settingsTo={`/spaces/${space.id}/settings`}
 					/>
 				</div>
 			</AppHeader>

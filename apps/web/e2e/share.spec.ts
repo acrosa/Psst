@@ -12,8 +12,8 @@ test.describe('sharing a day', () => {
 		await page.getByRole('button', { name: /^drop$/i }).click();
 		await expect(page.getByText('a day worth showing')).toBeVisible();
 
-		// Share from the account menu.
-		await page.getByRole('button', { name: /account menu/i }).click();
+		// Share lives with the space, under its name.
+		await page.getByRole('button', { name: /this space/i }).click();
 		await page.getByRole('button', { name: /share this day/i }).click();
 		const linkInput = page.getByTestId('share-link');
 		await expect(linkInput).toHaveValue(/\/b\//);

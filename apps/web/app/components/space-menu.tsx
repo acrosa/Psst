@@ -1,24 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ChevronDownIcon, SpacesIcon, TimelineIcon } from '~/components/icons';
+import {
+	ChevronDownIcon,
+	SettingsIcon,
+	ShareIcon,
+	SpacesIcon,
+	TimelineIcon,
+} from '~/components/icons';
 
 const itemClasses =
 	'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition hover:bg-paper-deep';
 
 /**
- * The space's own name, and the two places it leads: back through its days,
- * or out to the other spaces. A canvas shouldn't carry links it rarely needs.
+ * The space's own name, and everything that belongs to it: showing the day
+ * around, its past days, its settings — and the way out to the others. The
+ * account corner keeps only you.
  */
 export function SpaceMenu({
 	spaceId,
 	emoji,
 	name,
 	subtitle,
+	onShare,
+	settingsTo,
 }: {
 	spaceId: string;
 	emoji: string;
 	name: string;
 	subtitle?: string;
+	/** Opens the share dialog — a day shown around is a space thing. */
+	onShare?: () => void;
+	settingsTo?: string;
 }) {
 	const [open, setOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement>(null);
@@ -67,7 +79,20 @@ export function SpaceMenu({
 			</button>
 
 			{open ? (
-				<div className="absolute top-full left-0 z-30 mt-1 w-48 rounded-xl border border-line bg-card p-1 shadow-lift">
+				<div className="-translate-x-1/2 absolute top-full left-1/2 z-30 mt-1 w-48 rounded-xl border border-line bg-card p-1 shadow-lift">
+					{onShare ? (
+						<button
+							type="button"
+							className={itemClasses}
+							onClick={() => {
+								setOpen(false);
+								onShare();
+							}}
+						>
+							<ShareIcon className="h-4 w-4 text-ink-soft" />
+							Share this day
+						</button>
+					) : null}
 					<Link
 						to={`/spaces/${spaceId}/days`}
 						className={itemClasses}
@@ -80,6 +105,12 @@ export function SpaceMenu({
 						<SpacesIcon className="h-4 w-4 text-ink-soft" />
 						All spaces
 					</Link>
+					{settingsTo ? (
+						<Link to={settingsTo} className={itemClasses} onClick={() => setOpen(false)}>
+							<SettingsIcon className="h-4 w-4 text-ink-soft" />
+							Space settings
+						</Link>
+					) : null}
 				</div>
 			) : null}
 		</div>
