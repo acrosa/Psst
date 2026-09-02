@@ -11,6 +11,7 @@ import type { BoardItem } from '~/lib/services/canvases.server';
 import { BlurhashCanvas } from './blurhash-canvas';
 import { CardBack } from './card-back';
 import { FlipCard } from './flip-card';
+import { Lightbox } from './lightbox';
 import { MentionText } from './mention';
 
 export type BoardNodeData = {
@@ -714,10 +715,13 @@ export function PrintNode({ data }: BoardNodeProps) {
 	const { item, currentUserId, frozen } = data;
 	const [flipped, setFlipped] = useFlip();
 	const [loaded, setLoaded] = useState(false);
+	const [opened, setOpened] = useState(false);
 
 	const photo =
 		item.assets.find((asset) => asset.kind === 'thumb') ??
 		item.assets.find((asset) => asset.kind === 'original');
+	// The print shows the thumb; opening it deserves the full frame.
+	const full = item.assets.find((asset) => asset.kind === 'original') ?? photo;
 	const blurhash = photo?.blurhash ?? null;
 	const size = printSize(photo);
 
@@ -737,8 +741,10 @@ export function PrintNode({ data }: BoardNodeProps) {
 			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
 			flippable={!data.publicView}
 			onToggle={() => setFlipped((f) => !f)}
+			onPrimaryTap={full ? () => setOpened(true) : undefined}
 			front={
 				<div className="flex h-full w-full flex-col rounded-lg border border-line bg-card p-2.5 pb-8 shadow-card">
+					{opened && full ? <Lightbox src={full.url} onClose={() => setOpened(false)} /> : null}
 					<div className="relative min-h-0 flex-1 overflow-hidden rounded-sm bg-paper-deep">
 						{blurhash ? (
 							<BlurhashCanvas

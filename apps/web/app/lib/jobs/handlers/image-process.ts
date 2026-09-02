@@ -3,6 +3,9 @@ import { db, schema } from '../../db/client.server';
 import { contentTypeFor, getObject, putObject } from '../../storage.server';
 
 const THUMB_SIZE = 480;
+// A phone photo is ~4000px and several megabytes. Nothing on a canvas — or
+// opened full screen on a retina display — needs more than this.
+const ORIGINAL_MAX = 2400;
 const BLURHASH_COMPONENTS = { x: 4, y: 3 } as const;
 
 /**
@@ -63,9 +66,24 @@ export async function imageProcess({ itemId }: { itemId: string }): Promise<void
 		const thumbKey = `${original.storageKey.replace(/\.[^.]+$/, '')}-thumb.webp`;
 		await putObject(thumbKey, thumb.data, contentTypeFor(thumbKey));
 
+		// Store a sensible original: the upload is re-encoded down to
+		// ORIGINAL_MAX (same format, same key) when it's larger than that.
+		let width = meta.width ?? null;
+		let height = meta.height ?? null;
+		const longest = Math.max(meta.width ?? 0, meta.height ?? 0);
+		if (longest > ORIGINAL_MAX) {
+			const capped = await image
+				.clone()
+				.resize(ORIGINAL_MAX, ORIGINAL_MAX, { fit: 'inside', withoutEnlargement: true })
+				.toBuffer({ resolveWithObject: true });
+			await putObject(original.storageKey, capped.data, contentTypeFor(original.storageKey));
+			width = capped.info.width;
+			height = capped.info.height;
+		}
+
 		await db
 			.update(schema.itemAssets)
-			.set({ width: meta.width ?? null, height: meta.height ?? null, blurhash })
+			.set({ width, height, blurhash })
 			.where(eq(schema.itemAssets.id, original.id));
 
 		await db.insert(schema.itemAssets).values({

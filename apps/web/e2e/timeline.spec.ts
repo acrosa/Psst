@@ -52,6 +52,7 @@ test.describe('the timeline', () => {
 		});
 
 		// The scrapbook lists yesterday (and not today)
+		await page.getByRole('button', { name: /this space/i }).click();
 		await page.getByRole('link', { name: /timeline/i }).click();
 		await page.waitForURL('**/days');
 		await expect(page.getByText('2 things')).toBeVisible();
@@ -85,6 +86,7 @@ test.describe('the timeline', () => {
 	test('an empty scrapbook explains itself', async ({ page }) => {
 		await registerOntoCanvas(page);
 
+		await page.getByRole('button', { name: /this space/i }).click();
 		await page.getByRole('link', { name: /timeline/i }).click();
 		await page.waitForURL('**/days');
 		await expect(page.getByText(/no pages yet/i)).toBeVisible();

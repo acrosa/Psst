@@ -5,6 +5,7 @@ import { Board } from '~/components/canvas/board';
 import { Composer } from '~/components/canvas/composer';
 import { InviteDialog } from '~/components/invite-dialog';
 import { ShareDialog } from '~/components/share-dialog';
+import { SpaceMenu } from '~/components/space-menu';
 import { AvatarStack } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
 import { requireUser } from '~/lib/auth.server';
@@ -247,41 +248,18 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 				user={user}
 				menuLinks={[
 					{ label: 'Invite', onClick: () => setInviting(true), icon: 'invite', mobileOnly: true },
-					{
-						label: 'Timeline',
-						to: `/spaces/${space.id}/days`,
-						icon: 'timeline',
-						mobileOnly: true,
-					},
 					{ label: 'Share this day', onClick: () => setSharing(true), icon: 'share' },
 					{ label: 'Space settings', to: `/spaces/${space.id}/settings`, icon: 'settings' },
-					{ label: 'Your spaces', to: '/spaces', icon: 'spaces' },
 				]}
 			>
 				<div className="flex min-w-0 items-center gap-2 sm:gap-3">
-					{/* The space's own name is the way back to all of them. */}
-					<Link
-						to="/spaces"
-						className="-mx-1.5 -my-1 flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition hover:bg-paper-deep sm:gap-3"
-					>
-						<span className="shrink-0 text-xl sm:text-2xl" aria-hidden>
-							{space.emoji}
-						</span>
-						<div className="min-w-0">
-							<div className="truncate font-medium text-sm leading-tight sm:text-base">
-								{space.name}
-							</div>
-							<div className="hidden truncate text-ink-faint text-xs leading-tight sm:block">
-								Today · {formatDay(board.date)}
-							</div>
-						</div>
-					</Link>
-					<Link
-						to={`/spaces/${space.id}/days`}
-						className="hidden shrink-0 rounded-lg px-1.5 py-1.5 text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink sm:block sm:px-2"
-					>
-						Timeline
-					</Link>
+					{/* The name is the door: timeline, or the other spaces. */}
+					<SpaceMenu
+						spaceId={space.id}
+						emoji={space.emoji}
+						name={space.name}
+						subtitle={`Today · ${formatDay(board.date)}`}
+					/>
 				</div>
 			</AppHeader>
 
