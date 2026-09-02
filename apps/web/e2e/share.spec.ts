@@ -28,10 +28,11 @@ test.describe('sharing a day', () => {
 		// …but nothing invites touching: no composer, no badges to flip.
 		await expect(stranger.getByTestId('composer-input')).toHaveCount(0);
 
-		// Stop sharing: the link dies.
+		// Stop sharing: the link dies (the revoke is a POST — give it its moment).
 		await page.getByRole('button', { name: /stop sharing/i }).click();
-		const dead = await stranger.goto(shareUrl);
-		expect(dead?.status()).toBe(404);
+		await expect
+			.poll(async () => (await stranger.goto(shareUrl))?.status(), { timeout: 10_000 })
+			.toBe(404);
 		await strangerContext.close();
 	});
 });

@@ -195,10 +195,7 @@ export function Board({
 			{items.length === 0 ? (
 				<div className="pointer-events-none absolute inset-0 grid place-items-center">
 					<div className="text-center">
-						<div className="text-5xl">🕊️</div>
-						<p className="mt-3 font-serif text-2xl text-ink-soft italic">
-							psst — drop something here
-						</p>
+						<p className="font-serif text-2xl text-ink-soft italic">psst — drop something here</p>
 						{!frozen ? (
 							<p className="mt-1 text-sm text-ink-faint">
 								a link, a note, a sticker… anything you'd whisper

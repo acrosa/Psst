@@ -11,6 +11,7 @@ import { useRef, useState } from 'react';
 import { PencilIcon } from '~/components/icons';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { DrawLayer, PENCIL_COLORS, type Stroke } from './composer';
+import { demoItem } from './demo-item';
 import { AudioNode, DrawingNode, PostcardNode, SlipNode, StickerNode } from './nodes';
 
 import '@xyflow/react/dist/style.css';
@@ -30,26 +31,6 @@ const nodeTypes = {
 	drawing: DrawingNode,
 	audio: AudioNode,
 };
-
-function demoItem(partial: Partial<BoardItem> & Pick<BoardItem, 'id' | 'type'>): BoardItem {
-	return {
-		url: null,
-		text: null,
-		x: 0,
-		y: 0,
-		z: 0,
-		rotation: 0,
-		scale: 1,
-		authorId: 'demo-ale',
-		authorName: 'Ale',
-		createdAt: '2026-08-29T09:00:00.000Z',
-		unfurl: null,
-		assets: [],
-		comments: [],
-		reactions: [],
-		...partial,
-	};
-}
 
 const heart =
 	'M 70 96 C 40 76 18 58 22 38 C 25 22 44 16 56 26 C 63 32 68 40 70 46 C 72 40 77 32 84 26 C 96 16 115 22 118 38 C 122 58 100 76 70 96 Z';

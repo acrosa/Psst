@@ -12,6 +12,7 @@ import {
 import { env } from '~/lib/env.server';
 import type { Route } from './+types/root';
 import './app.css';
+import { LostCanvas } from '~/components/lost-canvas';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
@@ -79,12 +80,19 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	let title = 'psst… something went sideways';
 	let detail = 'An unexpected error occurred.';
 
+	if (isRouteErrorResponse(error) && error.status === 404) {
+		// A lost page is still a canvas — read-only, with a couple of scraps.
+		return (
+			<LostCanvas
+				title="that page wandered off"
+				detail="Nothing lives at this address. Maybe it was archived with yesterday."
+			/>
+		);
+	}
+
 	if (isRouteErrorResponse(error)) {
-		title = error.status === 404 ? 'psst… that page wandered off' : `Error ${error.status}`;
-		detail =
-			error.status === 404
-				? 'Nothing lives at this address. Maybe it was archived with yesterday.'
-				: error.statusText || detail;
+		title = `Error ${error.status}`;
+		detail = error.statusText || detail;
 	} else if (import.meta.env.DEV && error instanceof Error) {
 		detail = error.message;
 	}

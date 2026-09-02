@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { requireUser } from '~/lib/auth.server';
+import { auth, requireUser } from '~/lib/auth.server';
 import { db, schema } from '~/lib/db/client.server';
 import { publicUrl, putObject } from '~/lib/storage.server';
 import type { Route } from './+types/api.profile';
@@ -28,6 +28,26 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
 	const user = await requireUser(request);
 	const formData = await request.formData();
+
+	// Changing a password is its own errand — it needs the old one, and it
+	// answers with its own yes or no.
+	if (formData.get('intent') === 'change-password') {
+		const currentPassword = String(formData.get('currentPassword') ?? '');
+		const newPassword = String(formData.get('newPassword') ?? '');
+		if (newPassword.length < 8) {
+			return Response.json({ error: 'Passwords need at least 8 characters.' }, { status: 400 });
+		}
+		try {
+			await auth.api.changePassword({
+				body: { currentPassword, newPassword, revokeOtherSessions: false },
+				headers: request.headers,
+			});
+		} catch (error) {
+			console.error('[profile] password change failed:', error);
+			return Response.json({ error: 'That current password didn’t match.' }, { status: 400 });
+		}
+		return { ok: true };
+	}
 
 	const updates: { name?: string; image?: string; emailMentions?: boolean } = {};
 

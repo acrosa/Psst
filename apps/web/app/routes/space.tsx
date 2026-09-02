@@ -276,11 +276,6 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 							</div>
 						</div>
 					</Link>
-					<span className="hidden shrink-0 sm:block">
-						<Button size="sm" onClick={() => setInviting(true)}>
-							Invite
-						</Button>
-					</span>
 					<Link
 						to={`/spaces/${space.id}/days`}
 						className="hidden shrink-0 rounded-lg px-1.5 py-1.5 text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink sm:block sm:px-2"
@@ -331,9 +326,14 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						<span className="animate-shimmer font-serif text-2xl italic">setting the table…</span>
 					</div>
 				)}
-				{/* The people at the table, tucked under the account corner */}
-				<div className="pointer-events-none absolute top-3 right-4 z-10 hidden sm:block">
-					<AvatarStack people={members} />
+				{/* The people at the table, and the way to add one more */}
+				<div className="absolute top-3 right-4 z-10 hidden sm:block">
+					<div className="flex items-center gap-2.5 rounded-full border border-line bg-card/90 py-1.5 pr-1.5 pl-2.5 shadow-card backdrop-blur">
+						<AvatarStack people={members} />
+						<Button variant="soft" size="sm" onClick={() => setInviting(true)}>
+							Invite
+						</Button>
+					</div>
 				</div>
 			</main>
 

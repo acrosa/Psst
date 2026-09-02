@@ -120,7 +120,7 @@ export function CardBack({
 			) : null}
 
 			{/* Reactions + remove */}
-			<div className="nodrag flex items-center gap-0.5" data-noflip>
+			<div className="nodrag flex flex-wrap items-center gap-0.5" data-noflip>
 				{REACTION_EMOJIS.map((emoji) => {
 					const entry = reactionCounts.get(emoji);
 					return (
@@ -136,7 +136,7 @@ export function CardBack({
 								)
 							}
 							className={cn(
-								'flex h-7 items-center rounded-md px-1.5 text-sm transition hover:bg-paper-deep disabled:pointer-events-none',
+								'flex h-7 shrink-0 items-center rounded-md px-1 text-sm transition hover:bg-paper-deep disabled:pointer-events-none',
 								entry?.mine && 'bg-accent-soft',
 								!entry && 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100',
 							)}
@@ -148,14 +148,13 @@ export function CardBack({
 						</button>
 					);
 				})}
-				<span className="flex-1" />
 				{!frozen && item.authorId === currentUserId ? (
 					<>
 						<button
 							type="button"
 							aria-label="Remove from the board"
 							onClick={() => setConfirmingDelete(true)}
-							className="grid h-7 w-7 place-items-center rounded-md text-ink-faint transition hover:bg-accent-soft hover:text-accent-deep"
+							className="ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-md text-ink-faint transition hover:bg-accent-soft hover:text-accent-deep"
 						>
 							<TrashIcon className="h-3.5 w-3.5" />
 						</button>

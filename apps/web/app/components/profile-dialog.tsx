@@ -25,7 +25,32 @@ export function ProfileDialog({
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [emailMentions, setEmailMentions] = useState(true);
+	const [changingPassword, setChangingPassword] = useState(false);
+	const [passwordError, setPasswordError] = useState<string | null>(null);
+	const [passwordSaved, setPasswordSaved] = useState(false);
+	const [savingPassword, setSavingPassword] = useState(false);
 	const revalidator = useRevalidator();
+
+	async function savePassword(form: HTMLFormElement) {
+		setSavingPassword(true);
+		setPasswordError(null);
+		try {
+			const body = new FormData(form);
+			body.set('intent', 'change-password');
+			const response = await fetch('/api/profile', { method: 'POST', body });
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				setPasswordError(data?.error ?? 'That didn’t save — try again?');
+				return;
+			}
+			form.reset();
+			setChangingPassword(false);
+			setPasswordSaved(true);
+			setTimeout(() => setPasswordSaved(false), 3000);
+		} finally {
+			setSavingPassword(false);
+		}
+	}
 
 	useEffect(() => {
 		if (!open) return;
@@ -101,6 +126,16 @@ export function ProfileDialog({
 					/>
 				</div>
 
+				{changingPassword ? null : (
+					<button
+						type="button"
+						onClick={() => setChangingPassword(true)}
+						className="justify-self-start text-ink-faint text-sm underline underline-offset-2 transition hover:text-ink-soft"
+					>
+						{passwordSaved ? 'Password saved ✓' : 'Change password'}
+					</button>
+				)}
+
 				<label className="flex cursor-pointer items-center gap-2.5 text-ink-soft text-sm">
 					<input
 						type="checkbox"
@@ -120,6 +155,58 @@ export function ProfileDialog({
 					</Button>
 				</div>
 			</form>
+
+			{changingPassword ? (
+				<form
+					className="mt-5 grid gap-3 border-line border-t pt-5"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void savePassword(event.currentTarget);
+					}}
+				>
+					{passwordError ? <p className="text-accent-deep text-sm">{passwordError}</p> : null}
+
+					<div className="grid gap-1.5">
+						<Label htmlFor="current-password">Current password</Label>
+						<Input
+							id="current-password"
+							name="currentPassword"
+							type="password"
+							autoComplete="current-password"
+							required
+						/>
+					</div>
+
+					<div className="grid gap-1.5">
+						<Label htmlFor="new-password">New password</Label>
+						<Input
+							id="new-password"
+							name="newPassword"
+							type="password"
+							autoComplete="new-password"
+							placeholder="8+ characters"
+							minLength={8}
+							required
+						/>
+					</div>
+
+					<div className="flex justify-end gap-2">
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => {
+								setChangingPassword(false);
+								setPasswordError(null);
+							}}
+						>
+							Never mind
+						</Button>
+						<Button type="submit" disabled={savingPassword}>
+							{savingPassword ? 'Saving…' : 'Save password'}
+						</Button>
+					</div>
+				</form>
+			) : null}
 		</Dialog>
 	);
 }
