@@ -35,7 +35,7 @@ const heart =
 
 const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> = [
 	{
-		position: { x: 20, y: 40 },
+		position: { x: 0, y: 0 },
 		item: demoItem({
 			id: 'demo-note-six',
 			type: 'note',
@@ -44,7 +44,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 20, y: 430 },
+		position: { x: 0, y: 390 },
 		item: demoItem({
 			id: 'demo-note-drag',
 			type: 'note',
@@ -55,7 +55,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 220, y: 190 },
+		position: { x: 290, y: 120 },
 		item: demoItem({
 			id: 'demo-link-americo',
 			type: 'link',
@@ -83,7 +83,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 220, y: 620 },
+		position: { x: 290, y: 550 },
 		item: demoItem({
 			id: 'demo-audio',
 			type: 'audio',
@@ -100,7 +100,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 50, y: 240 },
+		position: { x: 55, y: 215 },
 		item: demoItem({
 			id: 'demo-drawing-heart',
 			type: 'drawing',
@@ -108,15 +108,15 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 380, y: 490 },
+		position: { x: 410, y: 425 },
 		item: demoItem({ id: 'demo-sticker-frog', type: 'emoji', text: '🐸', rotation: 3 }),
 	},
 	{
-		position: { x: 380, y: 40 },
+		position: { x: 390, y: 0 },
 		item: demoItem({ id: 'demo-sticker-berry', type: 'emoji', text: '🍓', rotation: -6 }),
 	},
 	{
-		position: { x: 70, y: 620 },
+		position: { x: 75, y: 570 },
 		item: demoItem({ id: 'demo-sticker-star', type: 'emoji', text: '⭐', rotation: 8 }),
 	},
 ];
@@ -185,17 +185,15 @@ function DemoBoardInner() {
 		const compact = dimensions.width <= 1100;
 		const scale = compact
 			? Math.min(1, (dimensions.width - 32) / 340)
-			: dimensions.width >= 1500
-				? 1.15
-				: 1;
+			: Math.min(1.15, (dimensions.width / 2 - 48) / 590, (dimensions.height - 224) / 710);
 		const intro = containerRef.current?.closest('.landing')?.querySelector('.landing-intro');
 		const canvasTop = containerRef.current?.getBoundingClientRect().top ?? 0;
 		const x = compact
 			? (dimensions.width - 340 * scale) / 2
-			: dimensions.width * 0.75 - 275 * scale;
+			: dimensions.width * 0.75 - 295 * scale;
 		const y = compact
 			? (intro?.getBoundingClientRect().bottom ?? 600) - canvasTop + 44
-			: Math.max(80, (dimensions.height - 780 * scale) / 2);
+			: 112 + (dimensions.height - 224 - 710 * scale) / 2;
 		const previous = layoutRef.current;
 		layoutRef.current = { compact, x, y, scale };
 		setNodes((prev) =>

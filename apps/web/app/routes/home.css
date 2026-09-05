@@ -132,13 +132,15 @@
 }
 .landing-playground > p {
 	position: absolute;
-	bottom: 24px;
-	right: 12%;
+	bottom: 40px;
+	left: 50%;
+	right: 80px;
 	pointer-events: none;
 	margin-top: 8px;
 	color: var(--landing-muted);
 	font-family: var(--font-serif);
 	font-size: 17px;
+	line-height: 1.5;
 	font-style: italic;
 	text-align: center;
 }
