@@ -1,6 +1,6 @@
 # psst
 
-A private shared **daily canvas** for tiny groups (2–8): members drop links, notes, photos, and emoji stickers onto today's board, drag them around, flip them to read small caption threads, and react. Days archive into a timeline. Explicitly **not a chat**. Full product spec: `docs/PRODUCT_SPEC.md`. Design system: `docs/DESIGN.md`.
+A private shared **daily canvas** for tiny groups (2–8): members drop links, notes, photos, and emoji stickers onto today's board, drag them around, flip them to read small caption threads, and react. Days archive into a timeline. Explicitly **not a chat**. Full product spec: `docs/PRODUCT_SPEC.md`. Design system: `docs/DESIGN.md`. User stories: `docs/USER_STORIES.md`.
 
 ## Design spirit
 
