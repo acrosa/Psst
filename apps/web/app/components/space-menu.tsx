@@ -54,7 +54,7 @@ export function SpaceMenu({
 	}, [open]);
 
 	return (
-		<div className="relative min-w-0" ref={rootRef}>
+		<div className="relative flex min-w-0" ref={rootRef}>
 			<button
 				type="button"
 				aria-label="This space"
