@@ -48,6 +48,9 @@ const schema = z.object({
 	S3_SECRET_ACCESS_KEY: z.string().optional(),
 	S3_PUBLIC_URL: z.string().optional(),
 
+	// The Sunday letter: psst writes the group a weekly letter when a key is set
+	ANTHROPIC_API_KEY: z.string().optional(),
+
 	// Analytics (LogSnag)
 	LOGSNAG_TOKEN: z.string().optional(),
 	LOGSNAG_PROJECT: z.string().default('psst'),

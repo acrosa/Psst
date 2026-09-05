@@ -12,6 +12,7 @@ const ITEM_VERBS: Record<string, string> = {
 	emoji: 'stuck a sticker',
 	drawing: 'drew something',
 	audio: 'left a voice note',
+	letter: 'left a letter',
 };
 
 /**

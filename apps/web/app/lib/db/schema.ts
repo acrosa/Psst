@@ -172,7 +172,9 @@ export const items = pgTable(
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
-		type: text('type', { enum: ['link', 'note', 'image', 'emoji', 'drawing', 'audio'] }).notNull(),
+		type: text('type', {
+			enum: ['link', 'note', 'image', 'emoji', 'drawing', 'audio', 'letter'],
+		}).notNull(),
 		url: text('url'),
 		text: text('text'),
 		x: real('x').notNull().default(0),
@@ -252,6 +254,31 @@ export const itemAssets = pgTable(
 
 // ============================================================================
 // Types
+/**
+ * The Sunday letter's bookkeeping: one row per (space, week) says whether
+ * psst wrote that week's letter, stayed quiet, or should try again. The
+ * letter itself is an ordinary `items` row of type 'letter'.
+ */
+export const letters = pgTable(
+	'letters',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		spaceId: uuid('space_id')
+			.notNull()
+			.references(() => spaces.id, { onDelete: 'cascade' }),
+		/** 'YYYY-MM-DD' — the Monday, in the space's timezone */
+		weekStart: text('week_start').notNull(),
+		status: text('status', { enum: ['pending', 'written', 'silent', 'failed'] })
+			.notNull()
+			.default('pending'),
+		attempts: integer('attempts').notNull().default(0),
+		itemId: uuid('item_id').references(() => items.id, { onDelete: 'set null' }),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull(),
+	},
+	(t) => [unique('letters_space_week_unique').on(t.spaceId, t.weekStart)],
+).enableRLS();
+
 // ============================================================================
 
 export type User = typeof users.$inferSelect;
@@ -265,3 +292,4 @@ export type ItemComment = typeof itemComments.$inferSelect;
 export type ItemReaction = typeof itemReactions.$inferSelect;
 export type ItemAsset = typeof itemAssets.$inferSelect;
 export type ItemType = Item['type'];
+export type Letter = typeof letters.$inferSelect;

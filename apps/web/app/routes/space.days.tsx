@@ -46,6 +46,16 @@ function Peek({ peek }: { peek: DayPeek }) {
 	if (peek.type === 'emoji') {
 		return <span className="text-2xl">{peek.emoji}</span>;
 	}
+	if (peek.type === 'letter') {
+		return (
+			<span
+				className="grid h-12 w-12 place-items-center rounded-sm border border-line bg-card text-lg"
+				title="a letter from psst"
+			>
+				✉
+			</span>
+		);
+	}
 	if (peek.imageUrl) {
 		return <img src={peek.imageUrl} alt="" className="h-12 w-12 rounded-sm object-cover" />;
 	}

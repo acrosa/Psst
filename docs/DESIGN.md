@@ -44,7 +44,7 @@ Rules:
 
 ## Type
 
-Three voices, one job each. Faces load from Google Fonts with real fallbacks (see `root.tsx`). **No handwritten or script faces** — warmth comes from the serif, the paper palette, and the copy, never from scribbles.
+Three voices, one job each. Faces load from Google Fonts with real fallbacks (see `root.tsx`). **No handwritten or script faces** — warmth comes from the serif, the paper palette, and the copy, never from scribbles. One exception: the Sunday letter is written in psst's own hand (`app/lib/hand/` — generated paths, not a face). It is psst's voice, never a member's.
 
 | Voice | Face | Job | Never |
 |---|---|---|---|
@@ -81,6 +81,7 @@ The physical identity of each item type — keep them distinct and true:
 | Image | Photo print | White polaroid frame + deeper chin, sized to the photo's aspect ratio (never clipped; extreme ratios gently clamped), blurhash bloom on load |
 | Emoji | Die-cut sticker | The glyph on a white hand-cut circular pad — edge gently irregular, seeded per item — with a soft shadow; silent — no back, no thread, no reactions |
 | Drawing | Pencil stroke | Free strokes in one palette color, floating directly on the paper; silent like stickers |
+| Letter | Folded sheet | The Sunday letter, in psst's own generated hand (vector ribbons seeded per week — never a font), on thin paper with two faint fold creases at thirds; the date written top-right, signed psst. Back is a normal postmark side; tap opens the reading view; the space's owner may take it down |
 | Voice note | Speaking slip | Paper pill: round play button, static waveform (played bars in ink), mono duration; under a minute. *(Seed: auto-transcript, expandable for when listening isn't possible.)* |
 
 Card backs are the postmark side: author, time (meta voice), the small thread (hand voice), reactions.

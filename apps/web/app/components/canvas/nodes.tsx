@@ -1,17 +1,21 @@
 import type { NodeProps } from '@xyflow/react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { ArrowUpRightIcon, ChatIcon, PauseIcon, PlayIcon, XIcon } from '~/components/icons';
 import { Avatar } from '~/components/ui/avatar';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
+import { formatWeek } from '~/lib/dates';
 import { ITEM_SIZES } from '~/lib/design';
+import { composeLetterPage, letterPathData } from '~/lib/hand';
+import { parseLetter } from '~/lib/letter';
 import type { Mentionable } from '~/lib/mentions';
 import { stickerCut, tornEdge } from '~/lib/paper';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { BlurhashCanvas } from './blurhash-canvas';
 import { CardBack } from './card-back';
 import { FlipCard } from './flip-card';
+import { LetterSheet } from './letter-sheet';
 import { Lightbox } from './lightbox';
 import { MentionText } from './mention';
 
@@ -23,6 +27,8 @@ export type BoardNodeData = {
 	publicView?: boolean;
 	/** Space members, for rendering and completing @mentions. */
 	members?: Mentionable[];
+	/** The viewer's role — the owner may take psst's letter down. */
+	currentUserRole?: 'owner' | 'member';
 	onResize?: (itemId: string, scale: number) => void;
 	onLike?: (itemId: string) => void;
 };
@@ -203,6 +209,82 @@ export function SlipNode({ data }: BoardNodeProps) {
 					currentUserId={currentUserId}
 					frozen={frozen}
 					members={data.members ?? []}
+				/>
+			}
+		/>
+	);
+}
+
+/**
+ * The Sunday letter → a folded sheet in psst's own hand. Tap to read it
+ * large; flip it to write back. The owner may take it down.
+ */
+export function LetterNode({ data }: BoardNodeProps) {
+	const { item, currentUserId, frozen } = data;
+	const [flipped, setFlipped] = useFlip();
+	const [opened, setOpened] = useState(false);
+	const size = ITEM_SIZES.letter;
+	const letter = useMemo(() => parseLetter(item.text), [item.text]);
+	const d = useMemo(
+		() =>
+			letter
+				? letterPathData(
+						composeLetterPage({
+							dateLabel: formatWeek(letter.weekStart),
+							greeting: letter.greeting,
+							lines: letter.lines,
+							close: letter.close,
+							sign: letter.sign,
+							seed: letter.seed,
+						}),
+					)
+				: null,
+		[letter],
+	);
+
+	return (
+		<FlipCard
+			width={size.w}
+			height={size.h}
+			rotation={item.rotation}
+			flipped={flipped}
+			badges={
+				data.publicView ? undefined : (
+					<CardBadges item={item} onFlip={() => setFlipped((f) => !f)} />
+				)
+			}
+			scale={item.scale}
+			onResize={data.onResize ? (scale) => data.onResize?.(item.id, scale) : undefined}
+			onLike={data.onLike ? () => data.onLike?.(item.id) : undefined}
+			flippable={!data.publicView}
+			onToggle={() => setFlipped((f) => !f)}
+			onPrimaryTap={d ? () => setOpened(true) : undefined}
+			front={
+				<div className="animate-pop-in h-full w-full" data-testid="letter">
+					{opened && d ? (
+						<Lightbox label="A letter from psst" onClose={() => setOpened(false)}>
+							<div className="aspect-[4/5] h-[min(88vh,900px)] max-w-full">
+								<LetterSheet d={d} className="shadow-lift" />
+							</div>
+						</Lightbox>
+					) : null}
+					{d ? (
+						<LetterSheet d={d} />
+					) : (
+						<div className="grid h-full w-full place-items-center rounded-md bg-card shadow-card">
+							<p className="font-serif text-ink-faint text-sm italic">the letter smudged…</p>
+						</div>
+					)}
+				</div>
+			}
+			back={
+				<CardBack
+					item={item}
+					currentUserId={currentUserId}
+					frozen={frozen}
+					members={data.members ?? []}
+					postmark={letter ? `the week of ${formatWeek(letter.weekStart)}` : undefined}
+					canDelete={!frozen && data.currentUserRole === 'owner'}
 				/>
 			}
 		/>

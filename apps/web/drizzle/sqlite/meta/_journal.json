@@ -43,6 +43,13 @@
       "when": 1788186702057,
       "tag": "0005_little_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788581688633,
+      "tag": "0006_aberrant_lockheed",
+      "breakpoints": true
     }
   ]
 }

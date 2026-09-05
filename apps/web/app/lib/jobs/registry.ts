@@ -1,4 +1,5 @@
 import { imageProcess } from './handlers/image-process';
+import { letterWrite } from './handlers/letter-write';
 import { pushNotify } from './handlers/push-notify';
 import { unfurlFetch } from './handlers/unfurl';
 
@@ -19,6 +20,8 @@ export type JobPayloads = {
 		/** Text to scan for @mentions — mentioned members get a direct nudge. */
 		mentionText?: string;
 	};
+	/** The Sunday letter for one space and one week (a Monday). */
+	'letter.write': { spaceId: string; weekStart: string };
 };
 
 export type JobType = keyof JobPayloads;
@@ -27,4 +30,5 @@ export const handlers: { [T in JobType]: (data: JobPayloads[T]) => Promise<void>
 	'unfurl.fetch': unfurlFetch,
 	'image.process': imageProcess,
 	'push.notify': pushNotify,
+	'letter.write': letterWrite,
 };

@@ -70,7 +70,7 @@ export type BoardAsset = {
 
 export type BoardItem = {
 	id: string;
-	type: 'link' | 'note' | 'image' | 'emoji' | 'drawing' | 'audio';
+	type: 'link' | 'note' | 'image' | 'emoji' | 'drawing' | 'audio' | 'letter';
 	url: string | null;
 	text: string | null;
 	x: number;
@@ -250,6 +250,7 @@ export async function listCanvases(
 export type DayPeek =
 	| { type: 'note'; text: string }
 	| { type: 'emoji'; emoji: string }
+	| { type: 'letter' }
 	| { type: 'link' | 'image'; imageUrl: string | null };
 
 export type TimelineDay = {
@@ -309,6 +310,9 @@ export async function getTimelinePreviews(
 				}
 				if (item.type === 'emoji') {
 					return { type: 'emoji', emoji: item.text ?? '✨' };
+				}
+				if (item.type === 'letter') {
+					return { type: 'letter' };
 				}
 				if (item.type === 'image') {
 					const key = thumbByItem.get(item.id);

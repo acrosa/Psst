@@ -143,7 +143,7 @@ export function ProfileDialog({
 						onChange={(event) => setEmailMentions(event.currentTarget.checked)}
 						className="h-4 w-4 accent-[var(--color-accent)]"
 					/>
-					Email me when someone mentions me
+					Emails from psst — mentions, and the Sunday letter
 				</label>
 
 				<div className="flex justify-end gap-2">

@@ -1,6 +1,7 @@
 import { requireUser } from '~/lib/auth.server';
 import { appUrl } from '~/lib/env.server';
 import { getBoardItems, getOrCreateTodayCanvas } from '~/lib/services/canvases.server';
+import { ensureWeeklyLetter } from '~/lib/services/letters.server';
 import { getSpace, listSpacesForUser, requireMember } from '~/lib/services/spaces.server';
 import { publicUrl } from '~/lib/storage.server';
 import type { Route } from './+types/api.board';
@@ -30,6 +31,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 
 	const canvas = await getOrCreateTodayCanvas(space.id, space.timezone);
+	void ensureWeeklyLetter(space).catch((error) => console.error('[letters]', error));
 	const items = await getBoardItems(canvas.id, (key) => new URL(publicUrl(key), appUrl).toString());
 
 	return {

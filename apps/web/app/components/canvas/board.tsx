@@ -17,6 +17,7 @@ import {
 	AudioNode,
 	type BoardNodeData,
 	DrawingNode,
+	LetterNode,
 	PostcardNode,
 	PrintNode,
 	SlipNode,
@@ -31,6 +32,7 @@ const nodeTypes: NodeTypes = {
 	image: PrintNode,
 	drawing: DrawingNode,
 	audio: AudioNode,
+	letter: LetterNode,
 };
 
 export type BoardProps = {
@@ -41,6 +43,8 @@ export type BoardProps = {
 	publicView?: boolean;
 	/** Space members, for @mentions. */
 	members?: Mentionable[];
+	/** The viewer's role — the owner may take psst's letter down. */
+	currentUserRole?: 'owner' | 'member';
 	onMove?: (itemId: string, x: number, y: number) => void;
 	onResize?: (itemId: string, scale: number) => void;
 	onDelete?: (itemIds: string[]) => void;
@@ -64,6 +68,7 @@ export function Board({
 	frozen,
 	publicView,
 	members,
+	currentUserRole,
 	onMove,
 	onResize,
 	onDelete,
@@ -81,7 +86,16 @@ export function Board({
 		position: { x: item.x, y: item.y },
 		zIndex: item.z,
 		draggable: !frozen,
-		data: { item, currentUserId, frozen, publicView, members, onResize, onLike },
+		data: {
+			item,
+			currentUserId,
+			frozen,
+			publicView,
+			members,
+			currentUserRole,
+			onResize,
+			onLike,
+		},
 	});
 
 	const [nodes, setNodes] = useState<BoardNode[]>(() => items.map(toNode));

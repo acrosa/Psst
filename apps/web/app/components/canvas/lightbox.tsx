@@ -3,17 +3,22 @@ import { createPortal } from 'react-dom';
 import { XIcon } from '~/components/icons';
 
 /**
- * A photo, big enough to actually look at. Rendered through a portal: React
- * Flow transforms the board, and a transformed ancestor would otherwise
- * become the containing block for anything fixed inside it.
+ * A photo (or a letter), big enough to actually look at. Rendered through a
+ * portal: React Flow transforms the board, and a transformed ancestor would
+ * otherwise become the containing block for anything fixed inside it.
  */
 export function Lightbox({
 	src,
 	alt = '',
+	label = 'Photo',
+	children,
 	onClose,
 }: {
-	src: string;
+	src?: string;
 	alt?: string;
+	label?: string;
+	/** Something other than a photo to look at, e.g. the letter's sheet. */
+	children?: React.ReactNode;
 	onClose: () => void;
 }) {
 	useEffect(() => {
@@ -40,15 +45,26 @@ export function Lightbox({
 			onClick={onClose}
 			role="dialog"
 			aria-modal="true"
-			aria-label="Photo"
+			aria-label={label}
 		>
-			<img
-				src={src}
-				alt={alt}
-				draggable={false}
-				className="max-h-full max-w-full rounded-lg object-contain shadow-lift"
-				onClick={(event) => event.stopPropagation()}
-			/>
+			{children ? (
+				// A click (or key) inside is for the letter, not the curtain.
+				<div
+					className="max-h-full max-w-full"
+					onClick={(event) => event.stopPropagation()}
+					onKeyDown={(event) => event.stopPropagation()}
+				>
+					{children}
+				</div>
+			) : (
+				<img
+					src={src}
+					alt={alt}
+					draggable={false}
+					className="max-h-full max-w-full rounded-lg object-contain shadow-lift"
+					onClick={(event) => event.stopPropagation()}
+				/>
+			)}
 			<button
 				type="button"
 				aria-label="Close"

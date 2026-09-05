@@ -28,6 +28,7 @@ import {
 	resizeItem,
 	toggleReaction,
 } from '~/lib/services/items.server';
+import { ensureWeeklyLetter } from '~/lib/services/letters.server';
 import {
 	ensureMember,
 	getSpace,
@@ -56,6 +57,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		getOrCreateTodayCanvas(space.id, space.timezone),
 	]);
 	const items = await getBoardItems(canvas.id, publicUrl);
+	// A new week's first open books last week's letter; nothing waits for it.
+	void ensureWeeklyLetter(space).catch((error) => console.error('[letters]', error));
 
 	return {
 		user: { id: user.id, name: user.name ?? null, image: user.image ?? null },
@@ -270,6 +273,7 @@ export default function Space({ loaderData }: Route.ComponentProps) {
 						currentUserId={user.id}
 						frozen={false}
 						members={members}
+						currentUserRole={members.find((m) => m.id === user.id)?.role}
 						composer={<Composer members={members} />}
 						onLike={(itemId) =>
 							moveFetcher.submit(

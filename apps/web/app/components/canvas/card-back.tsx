@@ -24,11 +24,17 @@ export function CardBack({
 	currentUserId,
 	frozen,
 	members = [],
+	postmark,
+	canDelete = item.authorId === currentUserId,
 }: {
 	item: BoardItem;
 	currentUserId: string;
 	frozen: boolean;
 	members?: Mentionable[];
+	/** What the postmark says instead of the time — the letter names its week. */
+	postmark?: string;
+	/** Who may take this off the board (the author, by default). */
+	canDelete?: boolean;
 }) {
 	const commentFetcher = useFetcher<{ error?: string }>();
 	const [draft, setDraft] = useState('');
@@ -69,7 +75,7 @@ export function CardBack({
 					{item.authorName ?? 'Someone'}
 				</span>
 				<span className="shrink-0 font-mono text-[10px] text-ink-faint uppercase tracking-wider">
-					{timeOfDay(item.createdAt)}
+					{postmark ?? timeOfDay(item.createdAt)}
 				</span>
 			</div>
 
@@ -148,7 +154,7 @@ export function CardBack({
 						</button>
 					);
 				})}
-				{!frozen && item.authorId === currentUserId ? (
+				{!frozen && canDelete ? (
 					<>
 						<button
 							type="button"

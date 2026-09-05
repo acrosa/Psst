@@ -90,6 +90,55 @@ export async function sendMentionEmail({
 	await deliver({ to, subject, text, html, logHint: url });
 }
 
+type LetterEmailArgs = {
+	to: string;
+	spaceName: string;
+	spaceEmoji: string;
+	/** The letter, rendered in psst's hand. */
+	imageUrl: string;
+	/** The same words, for the plain-text half. */
+	lines: string[];
+	url: string;
+};
+
+/** The Sunday letter — psst read the week's board and wrote the group a page. */
+export async function sendLetterEmail({
+	to,
+	spaceName,
+	spaceEmoji,
+	imageUrl,
+	lines,
+	url,
+}: LetterEmailArgs): Promise<void> {
+	const subject = `${spaceEmoji} a letter from "${spaceName}"`;
+	const footer =
+		'psst read this week\u2019s board to write this. Not a chat. No pressure. Just keepsakes.';
+	const text = [
+		`psst — a letter about last week on "${spaceName}":`,
+		'',
+		...lines,
+		'',
+		'Open the canvas:',
+		url,
+		'',
+		footer,
+	].join('\n');
+	const html = `
+		<div style="font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 460px; margin: 0 auto; padding: 32px 24px; color: #40382f;">
+			<div style="font-size: 40px; text-align: center;">${spaceEmoji}</div>
+			<h1 style="font-size: 22px; text-align: center; font-weight: 600;">a letter from psst</h1>
+			<p style="font-size: 15px; line-height: 1.5; color: #8d8375; text-align: center;">
+				About last week on <strong style="color:#40382f;">${spaceName}</strong>.
+			</p>
+			<img src="${imageUrl}" alt="" width="412" style="display: block; width: 100%; max-width: 412px; margin: 20px auto; border-radius: 10px; box-shadow: 0 6px 18px rgb(64 56 47 / 0.12);">
+			<p style="text-align: center; margin: 28px 0;">
+				<a href="${url}" style="background: #e2725b; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 500;">Open the canvas</a>
+			</p>
+			<p style="font-size: 12px; color: #c9bfae; text-align: center;">${footer}</p>
+		</div>`;
+	await deliver({ to, subject, text, html, logHint: imageUrl });
+}
+
 type AcceptedEmailArgs = {
 	to: string;
 	name: string | null;

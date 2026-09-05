@@ -3,6 +3,7 @@ import { AppHeader } from '~/components/app-header';
 import { AuthCard } from '~/components/auth-card';
 import { Board } from '~/components/canvas/board';
 import { Composer } from '~/components/canvas/composer';
+import { LetterSheet } from '~/components/canvas/letter-sheet';
 import { CameraIcon, ChatIcon, PencilIcon, SettingsIcon, SignOutIcon } from '~/components/icons';
 import { AuthDivider, SocialButtons } from '~/components/social-buttons';
 import { SpaceCard } from '~/components/space-card';
@@ -11,6 +12,8 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { env } from '~/lib/env.server';
+import { composeLetterPage, hashStr, letterPathData } from '~/lib/hand';
+import type { LetterData } from '~/lib/letter';
 import type { BoardItem } from '~/lib/services/canvases.server';
 
 export function meta() {
@@ -62,6 +65,37 @@ function item(overrides: Partial<BoardItem>): BoardItem {
 	};
 }
 
+/** A letter the way psst would write one — Spanish accents included, for tuning the hand. */
+const SAMPLE_LETTER: LetterData = {
+	v: 1,
+	weekStart: '2026-08-24',
+	weekEnd: '2026-08-30',
+	seed: hashStr('design|2026-08-24'),
+	greeting: 'hola, ale y brendi',
+	lines: [
+		'leí el tablero esta semana.',
+		'el pajarito de ale volvió dos veces,',
+		'y el mapa de la panadería se ganó',
+		'todos los corazones del jueves.',
+		'brendi estuvo callada el martes.',
+		'¿la canción del domingo era para alguien?',
+		'guardé la foto del techo al sol.',
+	],
+	close: 'hasta el lunes, con cariño',
+	sign: 'psst',
+};
+
+const SAMPLE_LETTER_PATH = letterPathData(
+	composeLetterPage({
+		dateLabel: 'august 24 - 30',
+		greeting: SAMPLE_LETTER.greeting,
+		lines: SAMPLE_LETTER.lines,
+		close: SAMPLE_LETTER.close,
+		sign: SAMPLE_LETTER.sign,
+		seed: SAMPLE_LETTER.seed,
+	}),
+);
+
 const BOARD_ITEMS: BoardItem[] = [
 	item({
 		id: 'i1',
@@ -110,6 +144,16 @@ const BOARD_ITEMS: BoardItem[] = [
 		rotation: 1.2,
 		authorName: 'Ale',
 		scale: 0.8,
+	}),
+	item({
+		id: 'i6',
+		type: 'letter',
+		text: JSON.stringify(SAMPLE_LETTER),
+		x: 20,
+		y: 300,
+		rotation: -1.4,
+		authorId: 'psst',
+		authorName: 'psst',
 	}),
 ];
 
@@ -366,6 +410,22 @@ export default function Design() {
 						<span className="flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1.5 text-xs shadow-card">
 							🫶 <span className="font-semibold text-ink-soft">2</span>
 						</span>
+					</div>
+				</div>
+			</Screen>
+
+			<Screen label="Material — the Sunday letter" height={640}>
+				<div className="flex h-full items-center justify-center gap-10 p-8">
+					<div className="h-[560px] w-[448px] shrink-0">
+						<LetterSheet d={SAMPLE_LETTER_PATH} />
+					</div>
+					<div className="max-w-xs space-y-2 text-ink-soft text-sm">
+						<p className="font-serif text-ink text-lg">psst's own hand.</p>
+						<p>
+							Generated paths, never a font: every word is Chaikin-smoothed ribbon, seeded per week.
+							Accents ride as marks over the base letter; the page shrinks its hand to fit.
+						</p>
+						<p>Tap a letter on the board to read it at this size.</p>
 					</div>
 				</div>
 			</Screen>

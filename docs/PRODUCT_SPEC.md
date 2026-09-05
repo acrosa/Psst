@@ -95,10 +95,15 @@ Playful and warm, with a postal soul. The app should feel like a small illustrat
 
 - Scroll from today into past days. Each archived day renders as the board was left — a page in a scrapbook. Archived canvases are frozen (server-enforced).
 
-### 4.5 Future direction (explicitly out of scope for v1)
+### 4.5 The Sunday letter
+
+- Once a week, psst reads a space's board (Monday–Sunday in the space's timezone) and writes the group a short letter in its own generated hand. It arrives on the next week's board as an ordinary item — draggable, flippable, a back to write on — is emailed to members, and archives with its day.
+- Written lazily on the first open of a new week (no cron), silent when the week had fewer than three things on it. Always on and transparent: the letter says psst read the week; the space's owner can take it down.
+
+### 4.6 Future direction (explicitly out of scope for v1)
 
 - iOS app with the widget as hero: today's canvas on the home screen, share-sheet capture, push-refreshed.
-- Live presence / SSE sync, weekly recaps.
+- Live presence / SSE sync.
 
 ---
 

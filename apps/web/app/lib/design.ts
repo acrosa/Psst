@@ -9,6 +9,8 @@ export const ITEM_SIZES = {
 	image: { w: 264, h: 264 },
 	emoji: { w: 96, h: 96 },
 	audio: { w: 300, h: 112 },
+	/** The Sunday letter's sheet: 120 × 150 mm at 2.5 px per mm. */
+	letter: { w: 300, h: 375 },
 } as const;
 
 export type BoardItemType = keyof typeof ITEM_SIZES;

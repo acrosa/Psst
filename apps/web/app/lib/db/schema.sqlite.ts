@@ -175,7 +175,9 @@ export const items = sqliteTable(
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
-		type: text('type', { enum: ['link', 'note', 'image', 'emoji', 'drawing', 'audio'] }).notNull(),
+		type: text('type', {
+			enum: ['link', 'note', 'image', 'emoji', 'drawing', 'audio', 'letter'],
+		}).notNull(),
 		url: text('url'),
 		text: text('text'),
 		x: real('x').notNull().default(0),
@@ -251,4 +253,25 @@ export const itemAssets = sqliteTable(
 		createdAt: createdAt().notNull(),
 	},
 	(t) => [index('item_assets_item_idx').on(t.itemId)],
+);
+
+export const letters = sqliteTable(
+	'letters',
+	{
+		id: uuidPk(),
+		spaceId: text('space_id')
+			.notNull()
+			.references(() => spaces.id, { onDelete: 'cascade' }),
+		weekStart: text('week_start').notNull(),
+		status: text('status', { enum: ['pending', 'written', 'silent', 'failed'] })
+			.notNull()
+			.default('pending'),
+		attempts: integer('attempts').notNull().default(0),
+		itemId: text('item_id').references(() => items.id, { onDelete: 'set null' }),
+		createdAt: createdAt().notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(t) => [unique('letters_space_week_unique').on(t.spaceId, t.weekStart)],
 );

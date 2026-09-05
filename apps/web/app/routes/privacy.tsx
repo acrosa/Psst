@@ -11,7 +11,7 @@ export function meta() {
 	];
 }
 
-const updated = 'August 29, 2026';
+const updated = 'September 5, 2026';
 
 export default function Privacy() {
 	return (
@@ -53,11 +53,19 @@ export default function Privacy() {
 					(Vercel), our database (Supabase), media storage (Cloudflare), and Apple's push
 					notification service. None of them may use your data for anything else.
 				</p>
+				<p>
+					<strong>The Sunday letter.</strong> Once a week, psst reads a space's board — that week's
+					links, notes, captions and reactions — and writes the group a short letter. The reading is
+					done by an AI model (Anthropic's Claude), acting only on our instructions and never
+					training on what it reads. Quiet weeks get no letter, and the space's owner can take one
+					off the board.
+				</p>
 
 				<h2>What we never do</h2>
 				<p>
-					No selling data. No advertising. No analytics or behavioral tracking. No reading your
-					spaces — your canvases are between you and the people you invited.
+					No selling data. No advertising. No analytics or behavioral tracking. Nobody reads your
+					spaces — your canvases are between you and the people you invited. The Sunday letter is
+					written by a model from your own board, and by no one else.
 				</p>
 
 				<h2>Deleting your data</h2>

@@ -6,7 +6,7 @@ import { enqueue } from '../jobs.server';
 import { track } from '../metrics.server';
 import { putObject } from '../storage.server';
 import { getOrCreateTodayCanvas } from './canvases.server';
-import { getSpace, requireMember } from './spaces.server';
+import { getMembership, getSpace, requireMember } from './spaces.server';
 
 const MAX_NOTE_LENGTH = 1000;
 const MAX_COMMENT_LENGTH = 280;
@@ -67,12 +67,16 @@ function parseDrawingContent(raw: string) {
  * Members rearrange from there — that's the point. A drag-drop or paste can
  * pin the position instead (`at`), keeping the rotation charm.
  */
-async function nextPlacement(canvasId: string, at?: DropPosition) {
+async function topZ(canvasId: string): Promise<number> {
 	const [top] = await db
 		.select({ z: max(schema.items.z) })
 		.from(schema.items)
 		.where(eq(schema.items.canvasId, canvasId));
-	const z = (top?.z ?? 0) + 1;
+	return top?.z ?? 0;
+}
+
+async function nextPlacement(canvasId: string, at?: DropPosition) {
+	const z = (await topZ(canvasId)) + 1;
 	const rotation = Math.round((Math.random() * 6 - 3) * 10) / 10;
 
 	if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) {
@@ -209,14 +213,9 @@ export async function moveItem(args: { itemId: string; userId: string; x: number
 		throw new Response('Bad position', { status: 400 });
 	}
 
-	const [top] = await db
-		.select({ z: max(schema.items.z) })
-		.from(schema.items)
-		.where(eq(schema.items.canvasId, canvas.id));
-
 	await db
 		.update(schema.items)
-		.set({ x: args.x, y: args.y, z: (top?.z ?? 0) + 1 })
+		.set({ x: args.x, y: args.y, z: (await topZ(canvas.id)) + 1 })
 		.where(eq(schema.items.id, item.id));
 
 	track({ event: 'item_moved', icon: '🫳', userId: args.userId, tags: { type: item.type } });
@@ -238,13 +237,41 @@ export async function resizeItem(args: { itemId: string; userId: string; scale: 
 	track({ event: 'item_resized', icon: '🔍', userId: args.userId, tags: { type: item.type } });
 }
 
-/** Authors take their own things back off the board. */
+/**
+ * Authors take their own things back off the board. psst's letter has no
+ * author in the room, so the space's owner may take that one down.
+ */
 export async function deleteItem(args: { itemId: string; userId: string }) {
-	const { item } = await getMutableItem(args.itemId, args.userId);
+	const { item, space } = await getMutableItem(args.itemId, args.userId);
 	if (item.authorId !== args.userId) {
-		throw new Response('Only the author can remove this.', { status: 403 });
+		const membership = item.type === 'letter' ? await getMembership(space.id, args.userId) : null;
+		if (membership?.role !== 'owner') {
+			throw new Response('Only the author can remove this.', { status: 403 });
+		}
 	}
 	await db.update(schema.items).set({ deletedAt: new Date() }).where(eq(schema.items.id, item.id));
+}
+
+/**
+ * The Sunday letter lands top-left of the day, signed by the system user —
+ * no membership check, because psst isn't a member; it's the room itself.
+ */
+export async function createLetterItem(args: { spaceId: string; canvasId: string; text: string }) {
+	const [item] = await db
+		.insert(schema.items)
+		.values({
+			canvasId: args.canvasId,
+			spaceId: args.spaceId,
+			authorId: 'psst',
+			type: 'letter',
+			text: args.text,
+			x: -40 + Math.random() * 40,
+			y: -20,
+			z: (await topZ(args.canvasId)) + 1,
+			rotation: Math.round((Math.random() * 4 - 2) * 10) / 10,
+		})
+		.returning();
+	return item;
 }
 
 export async function addComment(args: { itemId: string; userId: string; text: string }) {
