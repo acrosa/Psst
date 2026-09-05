@@ -57,16 +57,16 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 	{
 		position: { x: 220, y: 190 },
 		item: demoItem({
-			id: 'demo-link-bakery',
+			id: 'demo-link-americo',
 			type: 'link',
-			url: 'https://maps.app/the-bakery-around-the-corner',
+			url: 'https://www.waze.com/live-map/directions/ar/santa-fe/rosario/americo-helados-orono?to=place.ChIJbaFeBHKrt5UR8mf_OEbcO0o',
 			rotation: 2,
 			unfurl: {
-				title: 'the bakery around the corner',
-				description: 'open till six — the croissants go early.',
+				title: 'Américo Helados · Rosario',
+				description: 'Ice cream at Bv. Oroño 117, Rosario.',
 				imageUrl: null,
 				faviconUrl: null,
-				siteName: 'maps.app',
+				siteName: 'waze.com',
 				status: 'ok',
 			},
 			reactions: [{ emoji: '🔥', userId: 'demo-brendi' }],
