@@ -1,13 +1,11 @@
 import {
-	Background,
-	BackgroundVariant,
 	type Node,
 	ReactFlow,
 	ReactFlowProvider,
 	applyNodeChanges,
 	useReactFlow,
 } from '@xyflow/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PencilIcon } from '~/components/icons';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { DrawLayer, PENCIL_COLORS, type Stroke } from './composer';
@@ -37,7 +35,7 @@ const heart =
 
 const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> = [
 	{
-		position: { x: -700, y: -420 },
+		position: { x: 20, y: 40 },
 		item: demoItem({
 			id: 'demo-note-six',
 			type: 'note',
@@ -46,18 +44,18 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 300, y: 250 },
+		position: { x: 20, y: 430 },
 		item: demoItem({
 			id: 'demo-note-drag',
 			type: 'note',
-			text: 'psst — everything here is draggable (double-tap to like)',
+			text: 'a little reminder: you’re my favorite person.',
 			rotation: 1.5,
 			authorId: 'demo-brendi',
 			authorName: 'Brendi',
 		}),
 	},
 	{
-		position: { x: 380, y: -360 },
+		position: { x: 220, y: 190 },
 		item: demoItem({
 			id: 'demo-link-bakery',
 			type: 'link',
@@ -85,7 +83,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: -680, y: 500 },
+		position: { x: 220, y: 620 },
 		item: demoItem({
 			id: 'demo-audio',
 			type: 'audio',
@@ -102,7 +100,7 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: -800, y: 60 },
+		position: { x: 50, y: 240 },
 		item: demoItem({
 			id: 'demo-drawing-heart',
 			type: 'drawing',
@@ -110,17 +108,30 @@ const demoItems: Array<{ item: BoardItem; position: { x: number; y: number } }> 
 		}),
 	},
 	{
-		position: { x: 560, y: 40 },
+		position: { x: 380, y: 490 },
 		item: demoItem({ id: 'demo-sticker-frog', type: 'emoji', text: '🐸', rotation: 3 }),
 	},
 	{
-		position: { x: 240, y: -470 },
+		position: { x: 380, y: 40 },
 		item: demoItem({ id: 'demo-sticker-berry', type: 'emoji', text: '🍓', rotation: -6 }),
 	},
 	{
-		position: { x: -300, y: 430 },
+		position: { x: 70, y: 620 },
 		item: demoItem({ id: 'demo-sticker-star', type: 'emoji', text: '⭐', rotation: 8 }),
 	},
+];
+
+// Recompose the same real cards on narrow screens, instead of shrinking
+// the desktop arrangement until its text becomes too small to read.
+const mobilePositions = [
+	{ x: 0, y: 20 },
+	{ x: 0, y: 515 },
+	{ x: 40, y: 185 },
+	{ x: 0, y: 710 },
+	{ x: 0, y: 375 },
+	{ x: 245, y: 635 },
+	{ x: 245, y: 60 },
+	{ x: 240, y: 465 },
 ];
 
 function toggleLike(item: BoardItem): BoardItem {
@@ -135,6 +146,9 @@ function toggleLike(item: BoardItem): BoardItem {
 
 function DemoBoardInner() {
 	const { screenToFlowPosition } = useReactFlow();
+	const containerRef = useRef<HTMLDivElement>(null);
+	const layoutRef = useRef<{ compact: boolean; x: number; y: number; scale: number } | null>(null);
+	const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 	const [drawing, setDrawing] = useState(false);
 	const [strokes, setStrokes] = useState<Stroke[]>([]);
 	const settleTimer = useRef<number | null>(null);
@@ -156,6 +170,61 @@ function DemoBoardInner() {
 			data: { item, currentUserId: VISITOR, frozen: true, onLike },
 		}));
 	});
+
+	useEffect(() => {
+		if (!containerRef.current) return;
+		const observer = new ResizeObserver(([entry]) => {
+			setDimensions({ width: entry.contentRect.width, height: entry.contentRect.height });
+		});
+		observer.observe(containerRef.current);
+		return () => observer.disconnect();
+	}, []);
+
+	useEffect(() => {
+		if (!dimensions.width || !dimensions.height) return;
+		const compact = dimensions.width <= 1100;
+		const scale = compact
+			? Math.min(1, (dimensions.width - 32) / 340)
+			: dimensions.width >= 1500
+				? 1.15
+				: 1;
+		const intro = containerRef.current?.closest('.landing')?.querySelector('.landing-intro');
+		const canvasTop = containerRef.current?.getBoundingClientRect().top ?? 0;
+		const x = compact
+			? (dimensions.width - 340 * scale) / 2
+			: dimensions.width * 0.75 - 275 * scale;
+		const y = compact
+			? (intro?.getBoundingClientRect().bottom ?? 600) - canvasTop + 44
+			: Math.max(80, (dimensions.height - 780 * scale) / 2);
+		const previous = layoutRef.current;
+		layoutRef.current = { compact, x, y, scale };
+		setNodes((prev) =>
+			prev.map((node) => {
+				const index = demoItems.findIndex(({ item }) => item.id === node.id);
+				if (index < 0) return node;
+				const seed = compact ? mobilePositions[index] : demoItems[index].position;
+				const position =
+					previous && previous.compact === compact
+						? {
+								x: x + ((node.position.x - previous.x) * scale) / previous.scale,
+								y: y + ((node.position.y - previous.y) * scale) / previous.scale,
+							}
+						: { x: x + seed.x * scale, y: y + seed.y * scale };
+				return {
+					...node,
+					position,
+					data: { ...node.data, item: { ...(node.data.item as BoardItem), scale } },
+				};
+			}),
+		);
+	}, [dimensions]);
+
+	useEffect(
+		() => () => {
+			if (settleTimer.current) window.clearTimeout(settleTimer.current);
+		},
+		[],
+	);
 
 	function commitStrokes(current: Stroke[]) {
 		if (settleTimer.current) {
@@ -209,7 +278,7 @@ function DemoBoardInner() {
 	}
 
 	return (
-		<div className="relative h-full w-full">
+		<div ref={containerRef} className="psst-board relative h-full w-full">
 			<ReactFlow
 				nodes={nodes}
 				onNodesChange={(changes) => setNodes((prev) => applyNodeChanges(changes, prev))}
@@ -217,22 +286,16 @@ function DemoBoardInner() {
 				nodesConnectable={false}
 				nodesDraggable
 				panOnDrag={false}
+				autoPanOnNodeDrag={false}
 				zoomOnScroll={false}
 				zoomOnPinch={false}
 				zoomOnDoubleClick={false}
 				preventScrolling={false}
 				proOptions={{ hideAttribution: true }}
-				fitView
-				fitViewOptions={{ padding: 0.05 }}
-				minZoom={0.2}
-			>
-				<Background
-					variant={BackgroundVariant.Dots}
-					gap={30}
-					size={1.5}
-					color="var(--color-line)"
-				/>
-			</ReactFlow>
+				defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+				minZoom={1}
+				maxZoom={1}
+			/>
 			{drawing ? (
 				<DrawLayer color={PENCIL_COLORS[0]} strokes={strokes} onStroke={addStroke} />
 			) : null}
@@ -244,7 +307,7 @@ function DemoBoardInner() {
 					if (drawing) commitStrokes(strokes);
 					setDrawing((prev) => !prev);
 				}}
-				className={`absolute right-6 bottom-6 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line shadow-card transition ${
+				className={`fixed right-6 bottom-6 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line shadow-card transition ${
 					drawing ? 'bg-accent text-white' : 'bg-card text-ink-soft hover:text-ink'
 				}`}
 			>

@@ -1,0 +1,214 @@
+.landing {
+	--landing-muted: #756a5d;
+	position: relative;
+	isolation: isolate;
+	min-height: max(100svh, 900px);
+	margin-inline: auto;
+	padding: 0 56px max(32px, env(safe-area-inset-bottom));
+}
+:root.dark .landing {
+	--landing-muted: #b7ab99;
+}
+.landing a:focus-visible {
+	outline: 2px solid var(--color-ink);
+	outline-offset: 5px;
+}
+.landing-header {
+	position: relative;
+	z-index: 10;
+	max-width: 1208px;
+	margin-inline: auto;
+	pointer-events: none;
+	display: flex;
+	align-items: center;
+	min-height: 112px;
+}
+.landing-wordmark {
+	font-family: var(--font-serif);
+	font-size: 36px;
+	font-style: italic;
+	letter-spacing: -2px;
+}
+.landing-wordmark span {
+	color: var(--color-accent);
+}
+.landing-main {
+	position: relative;
+	max-width: 1208px;
+	margin-inline: auto;
+	pointer-events: none;
+	display: grid;
+	grid-template-columns: 1fr 1.1fr;
+	align-items: center;
+	gap: 32px;
+	min-height: calc(100svh - 176px);
+}
+.landing-intro {
+	position: relative;
+	z-index: 10;
+	padding-block: 32px;
+}
+.landing-intro h1 {
+	font-family: var(--font-serif);
+	font-size: clamp(48px, 5.7vw, 72px);
+	font-weight: 400;
+	line-height: 1.02;
+	letter-spacing: -0.045em;
+}
+.landing-intro h1 em {
+	font-weight: 400;
+	color: var(--color-accent-deep);
+}
+:root.dark .landing-intro h1 em {
+	color: var(--color-accent);
+}
+.landing-description {
+	max-width: 425px;
+	margin-top: 28px;
+	color: var(--landing-muted);
+	font-size: 20px;
+	line-height: 1.65;
+	text-wrap: pretty;
+}
+.landing-actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-top: 32px;
+}
+.landing-cta,
+.landing-signin {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 54px;
+	font-size: 17px;
+	font-weight: 500;
+	border-radius: 999px;
+	transition: background-color 150ms, box-shadow 150ms;
+}
+.landing-cta {
+	padding: 14px 28px;
+	background: var(--color-accent);
+	color: #291c16;
+}
+.landing-cta:hover {
+	background: #ed917b;
+	box-shadow: 0 4px 16px rgb(226 114 91 / 0.18);
+}
+.landing-signin {
+	padding: 14px 20px;
+	color: var(--color-ink);
+}
+.landing-signin:hover {
+	background: var(--color-paper-deep);
+}
+.landing-footer {
+	margin-top: 38px;
+	color: var(--landing-muted);
+	font-size: 17px;
+}
+.landing-footer nav {
+	display: flex;
+	gap: 24px;
+}
+.landing-footer a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+}
+.landing-footer a:hover {
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+.landing-playground {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: auto;
+}
+.landing-canvas {
+	height: 100%;
+}
+.landing-playground > p {
+	position: absolute;
+	bottom: 24px;
+	right: 12%;
+	pointer-events: none;
+	margin-top: 8px;
+	color: var(--landing-muted);
+	font-family: var(--font-serif);
+	font-size: 17px;
+	font-style: italic;
+	text-align: center;
+}
+/* The hero is an overlay; the canvas remains one page-sized surface. */
+.landing-main {
+	position: static;
+}
+.landing a {
+	pointer-events: auto;
+}
+.landing-canvas .text-xs,
+.landing-canvas .text-sm,
+.landing-canvas [class*="text-[11px]"],
+.landing-canvas [class*="text-[13px]"] {
+	font-size: 16px;
+}
+.landing-canvas .react-flow__node-note p {
+	font-size: 18px;
+}
+
+@media (max-width: 1100px) {
+	.landing {
+		min-height: 100svh;
+		padding-inline: 28px;
+	}
+	.landing-header,
+	.landing-main {
+		max-width: 624px;
+	}
+	.landing-header {
+		min-height: 88px;
+	}
+	.landing-main {
+		grid-template-columns: 1fr;
+		gap: 8px;
+		min-height: 0;
+		padding-bottom: 24px;
+	}
+	.landing-intro {
+		padding-block: 28px 0;
+	}
+	.landing-intro h1 {
+		font-size: clamp(42px, 10.7vw, 66px);
+	}
+	.landing-description {
+		font-size: 18px;
+	}
+	.landing-footer {
+		margin-top: 22px;
+	}
+	.landing-playground {
+		display: none;
+	}
+}
+@media (max-width: 360px) {
+	.landing {
+		padding-inline: 20px;
+	}
+	.landing-actions {
+		gap: 8px;
+	}
+	.landing-cta {
+		padding-inline: 22px;
+	}
+	.landing-signin {
+		padding-inline: 16px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.landing a {
+		transition: none;
+	}
+}

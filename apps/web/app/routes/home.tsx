@@ -4,6 +4,7 @@ import { DemoBoard } from '~/components/canvas/demo-board';
 import { getUser } from '~/lib/auth.server';
 import { ogMeta } from '~/lib/og';
 import type { Route } from './+types/home';
+import './home.css';
 
 export function meta() {
 	return [
@@ -17,63 +18,67 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const user = await getUser(request);
-	if (user) {
-		throw redirect('/spaces');
-	}
+	if (user) throw redirect('/spaces');
 	return null;
 }
 
 export default function Home() {
-	const [boardReady, setBoardReady] = useState(false);
-	useEffect(() => setBoardReady(window.matchMedia('(min-width: 640px)').matches), []);
+	const [desktop, setDesktop] = useState(false);
+	useEffect(() => {
+		const media = window.matchMedia('(min-width: 1101px)');
+		const update = () => setDesktop(media.matches);
+		update();
+		media.addEventListener('change', update);
+		return () => media.removeEventListener('change', update);
+	}, []);
 
 	return (
-		<div className="relative min-h-svh overflow-hidden">
-			{boardReady ? (
-				<div className="absolute inset-0 max-sm:hidden">
-					<DemoBoard />
+		<div className="landing">
+			<header className="landing-header">
+				<Link to="/" className="landing-wordmark" aria-label="psst home">
+					psst<span>·</span>
+				</Link>
+			</header>
+			<main className="landing-main">
+				<div className="landing-intro">
+					<h1>
+						A canvas for
+						<br />
+						the people you
+						<br />
+						<em>whisper to.</em>
+					</h1>
+					<p className="landing-description">
+						Drop links, notes, photos and stickers on today’s canvas. Tomorrow, it becomes a page in
+						your scrapbook.
+					</p>
+					<div className="landing-actions">
+						<Link to="/register" className="landing-cta">
+							Start a canvas
+						</Link>
+						<Link to="/login" className="landing-signin">
+							Sign in
+						</Link>
+					</div>
+					<footer className="landing-footer">
+						<nav aria-label="Legal">
+							<Link to="/privacy">Privacy</Link>
+							<Link to="/terms">Terms</Link>
+						</nav>
+					</footer>
 				</div>
-			) : null}
-			<main className="pointer-events-none relative z-10 mx-auto flex min-h-svh w-full max-w-4xl flex-col justify-center gap-10 px-6 py-16">
-				<p className="animate-pop-in font-serif text-2xl italic leading-none">psst</p>
-
-				<h1 className="max-w-2xl font-serif text-5xl leading-[1.08] sm:text-6xl">
-					a canvas for the people you whisper to
-				</h1>
-
-				<p className="max-w-md text-ink-soft text-lg">
-					Drop links, notes, photos and stickers on today&apos;s board — tomorrow it becomes a page
-					in your scrapbook.
-				</p>
-
-				<p className="font-mono font-semibold text-[11px] text-ink-faint uppercase tracking-[0.2em]">
-					not a chat · no pressure · just keepsakes
-				</p>
-
-				<div className="pointer-events-auto flex items-center gap-3">
-					<Link
-						to="/register"
-						className="rounded-lg bg-accent px-5 py-2.5 font-medium text-sm text-white shadow-card transition hover:bg-accent-deep"
+				{desktop ? (
+					<section
+						className="landing-playground"
+						aria-label="Try the canvas: drag cards, double-tap to like, or draw"
+						aria-describedby="canvas-hint"
 					>
-						Start a canvas
-					</Link>
-					<Link
-						to="/login"
-						className="rounded-lg px-5 py-2.5 font-medium text-ink-soft text-sm transition hover:bg-paper-deep hover:text-ink"
-					>
-						Sign in
-					</Link>
-				</div>
-
-				<p className="pointer-events-auto text-ink-faint text-xs">
-					<Link to="/privacy" className="transition hover:text-ink-soft">
-						Privacy
-					</Link>
-					{' · '}
-					<Link to="/terms" className="transition hover:text-ink-soft">
-						Terms
-					</Link>
-				</p>
+						<div className="landing-canvas">
+							<DemoBoard />
+						</div>
+						<p id="canvas-hint">Make yourself at home. Drag something.</p>
+					</section>
+				) : null}
 			</main>
 		</div>
 	);
