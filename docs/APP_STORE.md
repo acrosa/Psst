@@ -92,6 +92,95 @@ Everything else (location, browsing history, purchases, diagnostics, analytics):
 - [x] Privacy policy + terms pages live, linked from the app's login screen.
 - [x] Microphone usage description (voice notes in the canvas).
 - [x] Widget extension (small / medium / large) with its own entitlements.
+- [x] Privacy manifests (`PrivacyInfo.xcprivacy`) in the app, share and widget
+  targets — declares the App Group `UserDefaults` required-reason API
+  (CA92.1, 1C8F.1) and the collected data types. Without these App Store
+  Connect rejects the upload (ITMS-91053).
+- [x] `CFBundleDisplayName = psst` (lowercase on the home screen).
+- [x] Release-compiles clean with **Xcode 26.2** (release). Do not archive with
+  Xcode-beta 27 — App Store Connect refuses builds from beta toolchains.
+  `sudo xcode-select -s /Applications/Xcode.app` first, or pick Xcode 26.2 in
+  Xcode → Settings → Locations.
+
+## TestFlight (do this first)
+
+1. App Store Connect → My Apps → **+** → New App: iOS, name **psst**, primary
+   language English (U.S.), bundle `you.psst.app`, SKU `psst-ios-1`.
+2. Xcode 26.2 → scheme **Psst**, destination **Any iOS Device (arm64)** →
+   Product → Archive → Distribute App → **App Store Connect** → Upload.
+   Accept the defaults (manage version/build, upload symbols). Automatic
+   signing creates the App Store profile, the App Group, push and
+   Sign-in-with-Apple capabilities on first use.
+3. Wait for "processing" to finish (~10 min; email arrives). No export
+   compliance prompt appears because `ITSAppUsesNonExemptEncryption = NO`.
+4. **Internal testing** (no review): TestFlight tab → Internal Testing → **+**
+   group "psst team" → add App Store Connect users → enable automatic
+   distribution. Testers get an email; they need the TestFlight app.
+5. **External testing** (Beta App Review, usually < 24 h, once per version):
+   External Testing → **+** group "friends" → add the build → fill in:
+   - Test Information → What to Test:
+     > Drop a note, a link and a photo on today's canvas; drag things around; flip a card and write on its back; add the widget to your home screen; share a link into psst from Safari's share sheet. Tell us anything that feels like friction.
+   - Beta App Description: the promotional text above.
+   - Feedback email: hello@psst.you
+   - Beta App Review Information: contact name/phone/email + the demo account
+     (Sign-in required: yes).
+   - Public link: enable, cap it (e.g. 200), share the link.
+6. Each new build: bump `CURRENT_PROJECT_VERSION` (build number) — the
+   marketing version can stay 1.0 until the store release.
+
+**The waitlist gate.** `requireUser` sends any account without `acceptedAt`
+to `/waitlist`. Two consequences for beta and review:
+
+- The demo account **must be admitted** at https://www.psst.you/admin before
+  you paste its credentials, or the reviewer lands on the waitlist page.
+- Tell reviewers to use the demo account, not Sign in with Apple — a fresh
+  Apple relay account would hit the waitlist too.
+- Testers who sign up fresh wait until you admit them at `/admin`. Accepting a
+  space invite link admits automatically, so send testers a space invite
+  alongside the TestFlight link.
+
+## App Store submission
+
+Done in the repo:
+
+- [x] **In-app account deletion** (guideline 5.1.1(v)): "Delete account" at the
+  bottom of the profile sheet → confirm → `deleteAccount` in
+  `app/lib/services/account.server.ts` removes drops, comments, reactions,
+  devices, sessions and the user; spaces pass to their longest-standing
+  member, empty ones go. Covered by `e2e/auth.spec.ts`.
+- [x] **Screenshots** in `docs/appstore/screenshots/` — `iphone-6.9/`
+  (1320×2868) and `ipad-13/` (2064×2752), four each: today's board, the back
+  of a card, the scrapbook, an archived day. Regenerate any time with
+  `STORE_SCREENSHOTS=1 pnpm exec playwright test e2e/store-screenshots.spec.ts`
+  (from `apps/web`).
+
+Steps, in order (App Store Connect → psst → App Store tab → 1.0 Prepare for
+Submission):
+
+1. **Screenshots**: iPhone 6.9" Display → drag the four from `iphone-6.9/` in
+   numeric order; iPad 13" Display → the four from `ipad-13/`. Skip the other
+   sizes (they scale down).
+2. **Promotional text, Description, Keywords, Support URL, Marketing URL**:
+   paste from "Version metadata" above.
+3. **Build**: click "+" next to Build → pick the TestFlight build. Reuse it; a
+   build that passed Beta App Review is fine for the store.
+4. **General App Information**: upload the 1024 icon only if not pulled from
+   the build (it is). Copyright: `2026 <your legal name>`. Version 1.0.
+5. **Age Rating** → Edit → answer None/No to everything → 4+.
+6. **App Review Information**: Sign-in required ✓ + the demo account; contact
+   name/phone/email; Notes: paste from "Sign-in for the review team" above.
+   Confirm the demo account is still admitted and its space has items.
+7. **Version Release**: "Manually release this version" — you push it live
+   after approval, on a day you pick.
+8. Left sidebar → **App Privacy** → Edit → answer per the Privacy table above,
+   Publish.
+9. Left sidebar → **Pricing and Availability**: Free, all territories.
+10. Left sidebar → **App Information**: Primary category Social Networking,
+    Secondary Lifestyle; Content Rights: no third-party content; Privacy
+    Policy URL.
+11. Top right → **Add for Review** → **Submit to App Review**. Typical turnaround
+    is 24–48 h. If rejected, the message lands in App Store Connect →
+    Resolution Center; reply there rather than resubmitting blind.
 
 ## Remaining steps (in order)
 
@@ -103,9 +192,9 @@ Everything else (location, browsing history, purchases, diagnostics, analytics):
    the `.p8` key you use for `APNS_*` env covers it.)
 3. **[ALE]** Switch `aps-environment` to `production` for the store build
    (Xcode does this automatically when archiving with a distribution profile).
-4. Upload 6.7" and 6.9" iPhone screenshots (and 13" iPad if keeping iPad
-   support): canvas with items, a flipped card, the timeline, the widget on a
-   home screen, login. Simulator screenshots at exact device sizes are fine.
+4. Upload 6.9" iPhone screenshots (and 13" iPad if keeping iPad support):
+   canvas with items, a flipped card, the timeline, the widget on a home
+   screen, login. Simulator screenshots at exact device sizes are fine.
 5. Fill in the metadata above, attach the demo account, submit for review.
 
 ## Known review risks & answers

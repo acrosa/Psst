@@ -18,6 +18,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "000000000000000200000000"
                BuildableName = "PsstWidget.appex"
+               BlueprintName = "PsstWidget"
                ReferencedContainer = "container:Psst.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -31,6 +32,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "000000000000000100000000"
                BuildableName = "Psst.app"
+               BlueprintName = "Psst"
                ReferencedContainer = "container:Psst.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -63,6 +65,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000200000000"
             BuildableName = "PsstWidget.appex"
+            BlueprintName = "PsstWidget"
             ReferencedContainer = "container:Psst.xcodeproj">
          </BuildableReference>
       </RemoteRunnable>
@@ -71,6 +74,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
             BuildableName = "Psst.app"
+            BlueprintName = "Psst"
             ReferencedContainer = "container:Psst.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -106,6 +110,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
             BuildableName = "Psst.app"
+            BlueprintName = "Psst"
             ReferencedContainer = "container:Psst.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
