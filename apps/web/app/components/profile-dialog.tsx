@@ -29,7 +29,27 @@ export function ProfileDialog({
 	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const [passwordSaved, setPasswordSaved] = useState(false);
 	const [savingPassword, setSavingPassword] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const revalidator = useRevalidator();
+
+	async function deleteAccount() {
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			const body = new FormData();
+			body.set('intent', 'delete-account');
+			const response = await fetch('/api/profile', { method: 'POST', body });
+			if (!response.ok) {
+				setDeleteError('That didn’t go through — try again?');
+				return;
+			}
+			window.location.assign('/login');
+		} finally {
+			setDeleting(false);
+		}
+	}
 
 	async function savePassword(form: HTMLFormElement) {
 		setSavingPassword(true);
@@ -207,6 +227,32 @@ export function ProfileDialog({
 					</div>
 				</form>
 			) : null}
+
+			{confirmingDelete ? (
+				<div className="mt-5 grid gap-3 border-line border-t pt-5">
+					{deleteError ? <p className="text-accent-deep text-sm">{deleteError}</p> : null}
+					<p className="text-ink-soft text-sm">
+						This deletes your account, your drops and your comments. Spaces you’re in stay with the
+						others. There’s no undo.
+					</p>
+					<div className="flex justify-end gap-2">
+						<Button type="button" variant="ghost" onClick={() => setConfirmingDelete(false)}>
+							Never mind
+						</Button>
+						<Button type="button" variant="danger" disabled={deleting} onClick={deleteAccount}>
+							{deleting ? 'Deleting…' : 'Delete my account'}
+						</Button>
+					</div>
+				</div>
+			) : (
+				<button
+					type="button"
+					onClick={() => setConfirmingDelete(true)}
+					className="mt-5 text-ink-faint text-xs underline underline-offset-2 transition hover:text-accent-deep"
+				>
+					Delete account
+				</button>
+			)}
 		</Dialog>
 	);
 }

@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { auth, requireUser } from '~/lib/auth.server';
 import { db, schema } from '~/lib/db/client.server';
+import { deleteAccount } from '~/lib/services/account.server';
 import { publicUrl, putObject } from '~/lib/storage.server';
 import type { Route } from './+types/api.profile';
 
@@ -47,6 +48,17 @@ export async function action({ request }: Route.ActionArgs) {
 			return Response.json({ error: 'That current password didn’t match.' }, { status: 400 });
 		}
 		return { ok: true };
+	}
+
+	// Leaving for good: sign out first so the cookie clears, then take the
+	// account and everything only it holds with it.
+	if (formData.get('intent') === 'delete-account') {
+		const signedOut = await auth.api.signOut({ headers: request.headers, asResponse: true });
+		await deleteAccount(user.id);
+		return Response.json(
+			{ ok: true },
+			{ headers: { 'Set-Cookie': signedOut.headers.get('set-cookie') ?? '' } },
+		);
 	}
 
 	const updates: { name?: string; image?: string; emailMentions?: boolean } = {};
