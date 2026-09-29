@@ -1,0 +1,30 @@
+{
+	"user": {
+		"id": "ZfUUVB0VwRKUBiN60nXe0c4LCHuOZJiK",
+		"name": "Test native 1",
+		"email": "native-mun63b4x-1-nbyq1p@example.com",
+		"image": null
+	},
+	"waitlisted": false,
+	"spaces": [
+		{
+			"id": "e303657f-ad43-4694-833b-2795fb9ac8bc",
+			"name": "our little corner",
+			"emoji": "🌷",
+			"timezone": "UTC",
+			"role": "owner",
+			"members": [
+				{
+					"id": "ZfUUVB0VwRKUBiN60nXe0c4LCHuOZJiK",
+					"name": "Test native 1",
+					"image": null,
+					"role": "owner"
+				}
+			],
+			"todayCount": 0
+		}
+	],
+	"flags": {
+		"nativeBoard": "auto"
+	}
+}

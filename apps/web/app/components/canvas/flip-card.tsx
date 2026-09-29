@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ResizeIcon } from '~/components/icons';
-import { clampScale } from '~/lib/design';
+import { MOTION, clampScale } from '~/lib/design';
 
 /** True while Option (Alt) is held — the resize affordance's on-switch. */
 function useAltHeld() {
@@ -195,13 +195,16 @@ export function FlipCard({
 					clickTimer.current = window.setTimeout(() => {
 						clickTimer.current = null;
 						primary();
-					}, 250);
+					}, MOTION.doubleTapMs);
 				}
 			}}
 		>
 			<div
-				className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]"
-				style={{ transform: `rotate(${rotation}deg)${flipped ? ' rotateY(180deg)' : ''}` }}
+				className="relative h-full w-full transition-transform [transform-style:preserve-3d]"
+				style={{
+					transitionDuration: `${MOTION.flipMs}ms`,
+					transform: `rotate(${rotation}deg)${flipped ? ' rotateY(180deg)' : ''}`,
+				}}
 			>
 				<div className="absolute inset-0 [backface-visibility:hidden]">
 					{front}

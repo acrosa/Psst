@@ -12,6 +12,7 @@ import {
 import { env } from '~/lib/env.server';
 import type { Route } from './+types/root';
 import './app.css';
+import { DevGrid } from '~/components/dev-grid';
 import { LostCanvas } from '~/components/lost-canvas';
 
 export const links: Route.LinksFunction = () => [
@@ -21,7 +22,8 @@ export const links: Route.LinksFunction = () => [
 export async function loader() {
 	// Web fonts are progressive enhancement — skipped in tests so an unreachable
 	// fonts CDN can never block the document load event.
-	return { withFonts: env.NODE_ENV !== 'test' };
+	// GridKit's overlay is a dev tool — never in tests or screenshots.
+	return { withFonts: env.NODE_ENV !== 'test', devGrid: env.NODE_ENV === 'development' };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -66,12 +68,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
 	const navigation = useNavigation();
 	return (
 		<>
 			{navigation.state !== 'idle' ? <div className="nav-progress" aria-hidden /> : null}
 			<Outlet />
+			{loaderData.devGrid ? <DevGrid /> : null}
 		</>
 	);
 }

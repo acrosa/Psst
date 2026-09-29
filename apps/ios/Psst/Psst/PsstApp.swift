@@ -1,3 +1,4 @@
+import GridKit
 import Observation
 import SwiftUI
 import UserNotifications
@@ -9,11 +10,19 @@ struct PsstApp: App {
 	@Environment(\.scenePhase) private var scenePhase
 	@State private var appState = AppState()
 
+	init() {
+		PsstFont.register()
+	}
+
 	var body: some Scene {
 		WindowGroup {
 			Group {
 				if appState.isSignedIn {
-					CanvasView()
+					// The web board stays one case away (docs/NATIVE_IOS.md §2).
+					switch appState.boardExperience {
+					case .native: NativeRoot()
+					case .web: CanvasView()
+					}
 				} else {
 					LoginView()
 				}
@@ -31,7 +40,11 @@ struct PsstApp: App {
 			}
 			.onChange(of: scenePhase) { _, phase in
 				if phase == .background { WidgetCenter.shared.reloadAllTimelines() }
+				if phase == .active { Task { await appState.refreshBoardFlag() } }
 			}
+			.task(id: appState.isSignedIn) { await appState.refreshBoardFlag() }
+			// Development grid overlay — a no-op in release builds.
+			.gridKit(.enabled(activation: .threeFingerLongPress, initialPreset: PsstGrid.preset))
 		}
 	}
 }

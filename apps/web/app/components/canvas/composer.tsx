@@ -12,13 +12,13 @@ import {
 } from '~/components/icons';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/cn';
-import { ITEM_SIZES, STICKER_EMOJIS } from '~/lib/design';
+import { ITEM_SIZES, MOTION, PENCIL_COLORS, STICKER_EMOJIS } from '~/lib/design';
 import { looksLikeUrl, normalizeUrl } from '~/lib/links';
 import type { Mentionable } from '~/lib/mentions';
 import { MentionMenu } from './mention';
 
-/** Pencil colors — one gesture of color, from the psst palette. */
-export const PENCIL_COLORS = ['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'];
+// Pencil colors live with the other tokens; re-exported for the demo board.
+export { PENCIL_COLORS };
 
 type Point = { x: number; y: number };
 export type Stroke = Point[];
@@ -138,7 +138,7 @@ export function Composer({ members = [] }: { members?: Mentionable[] } = {}) {
 		setStrokes((prev) => {
 			const next = [...prev, stroke];
 			if (settleTimer.current) window.clearTimeout(settleTimer.current);
-			settleTimer.current = window.setTimeout(() => commitStrokes(next), 1400);
+			settleTimer.current = window.setTimeout(() => commitStrokes(next), MOTION.pencilSettleMs);
 			return next;
 		});
 	}

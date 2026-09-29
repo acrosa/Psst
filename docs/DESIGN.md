@@ -70,6 +70,16 @@ Shared:
 - Spacing: Tailwind steps, favoring 2/3/4/6/8. When unsure, add space, not chrome.
 - Indicators: the caption row beneath the card (left-aligned) carries the chat chip + reactions and IS the flip control — no edge tabs. Actions overlay bottom-right on the card face (VISIT).
 
+## Grid
+
+One grid for the web and the native app, checked with [GridKit](https://github.com/acrosa/GridKit): `design/grid/psst.json` is the definition both platforms load (the web overlay in `pnpm dev`, ⌥⇧G; iOS debug builds, three-finger long press). The findings behind it: `design/grid/AUDIT.md`.
+
+- **4 pt base, 16 pt beat.** Every spacing, size, and line height lands on 4. Spacing steps are Tailwind's 2/3/4/6/8 (8/12/16/24/32).
+- **Shelves and sheets:** four columns inside 24 pt margins, 16 pt gutters. A sheet's readable column (`max-w-sm`, 384) is centered — on phones narrower than 432 that beats the margin, deliberately.
+- **Canvas chrome:** 16 pt insets from the edges; key lines at the header's bottom (60) and the composer's top (68 from the bottom). The collage itself stays free — items keep where they were dropped; the grid governs the chrome around them.
+- **The table's dot grid** sits on the 8 pt beat (`BOARD.dotGap`, 32).
+- **Exceptions are named, not accidental:** the letter's sheet (paper proportions, 120 × 150 mm) and the centered sheet column. Anything else off the grid is a bug.
+
 ## Materials
 
 The physical identity of each item type — keep them distinct and true:

@@ -51,6 +51,10 @@ const schema = z.object({
 	// The Sunday letter: psst writes the group a weekly letter when a key is set
 	ANTHROPIC_API_KEY: z.string().optional(),
 
+	// The iOS board: `auto` lets each device choose (Settings app toggle),
+	// `off` sends every install back to the web board, `on` makes it native.
+	IOS_NATIVE_BOARD: z.enum(['auto', 'on', 'off']).default('auto'),
+
 	// Analytics (LogSnag)
 	LOGSNAG_TOKEN: z.string().optional(),
 	LOGSNAG_PROJECT: z.string().default('psst'),

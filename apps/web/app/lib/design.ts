@@ -23,6 +23,37 @@ export function clampScale(scale: number): number {
 	return Math.min(SCALE_MAX, Math.max(SCALE_MIN, scale));
 }
 
+/**
+ * The table itself: how far it zooms, how the first view frames the day,
+ * and the dot grid on the paper (on the 8 pt beat — see DESIGN.md § Grid).
+ */
+export const BOARD = {
+	minZoom: 0.35,
+	maxZoom: 1.75,
+	/** fitView padding on first paint; never zooms past 1 to fit. */
+	fitPadding: 0.4,
+	fitMaxZoom: 1,
+	dotGap: 32,
+	dotSize: 1.5,
+	/** Pointer travel before a press becomes a drag. */
+	dragThreshold: 4,
+} as const;
+
+/** Motion vocabulary shared by every platform (DESIGN.md § Motion). */
+export const MOTION = {
+	/** The card flip — a 3D turn, CSS `ease`. */
+	flipMs: 500,
+	/** From the back a tap flips home; on the front, wait this long to tell a tap from a like. */
+	doubleTapMs: 250,
+	/** A pause this long after the last pencil stroke commits the drawing. */
+	pencilSettleMs: 1400,
+	/** Long-press to reach delete on silent items (stickers, drawings). */
+	longPressMs: 500,
+} as const;
+
+/** Pencil colors — one gesture of color, from the psst palette. */
+export const PENCIL_COLORS = ['#e2725b', '#4a7dbd', '#4e9a58', '#e0b64a', '#8b6cc1', '#6a5f4e'];
+
 /** Reactions stay a small, warm set — not a full emoji keyboard. */
 export const REACTION_EMOJIS = ['🫶', '😂', '🥹', '😮', '🔥', '👀'] as const;
 

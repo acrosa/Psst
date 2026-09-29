@@ -1,0 +1,42 @@
+# The web app and the JSON surface the native board reads: types, tokens
+# that feed iOS, and the Playwright suite on SQLite.
+name: Web
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'apps/ios/**'
+      - '**.md'
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'apps/ios/**'
+      - '**.md'
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - name: Design tokens are current (iOS reads them)
+        run: pnpm -C apps/web tokens:check
+      - run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

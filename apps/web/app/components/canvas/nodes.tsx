@@ -6,7 +6,7 @@ import { Avatar } from '~/components/ui/avatar';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { cn } from '~/lib/cn';
 import { formatWeek } from '~/lib/dates';
-import { ITEM_SIZES } from '~/lib/design';
+import { ITEM_SIZES, MOTION } from '~/lib/design';
 import { composeLetterPage, letterPathData } from '~/lib/hand';
 import { parseLetter } from '~/lib/letter';
 import type { Mentionable } from '~/lib/mentions';
@@ -557,7 +557,7 @@ function useLongPress(onLongPress: () => void) {
 				clear();
 				return;
 			}
-			timer.current = window.setTimeout(onLongPress, 500);
+			timer.current = window.setTimeout(onLongPress, MOTION.longPressMs);
 		},
 		onPointerUp: release,
 		onPointerMove: clear,

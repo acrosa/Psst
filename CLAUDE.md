@@ -41,8 +41,9 @@ pnpm install
 pnpm dev              # web on :3000 (Postgres via DATABASE_URL, or USE_SQLITE=true)
 pnpm worker           # background jobs (requires Postgres)
 pnpm typecheck        # react-router typegen && tsc
-pnpm lint             # biome check .
+pnpm lint             # biome check . + design tokens up to date
 pnpm test:e2e         # Playwright on SQLite (no Postgres needed)
+pnpm tokens           # regenerate the iOS design tokens (+ grid) from the web
 pnpm db:setup         # create the Postgres database
 pnpm db:migrate       # apply drizzle migrations
 pnpm -C apps/web db:generate          # regen pg migrations after schema changes
@@ -57,6 +58,9 @@ pnpm -C apps/web db:generate:sqlite   # regen sqlite migrations (keep BOTH in sy
 - **Daily rollover is lazy**: today's canvas row is created on first touch using the space's IANA timezone (`app/lib/dates.ts`, `Intl`-based, no date library). A canvas with `date < today(tz)` is archived; mutations against it are rejected in the services layer.
 - **Canvas** = React Flow (`@xyflow/react`), no edges, custom node types: `postcard` (link), `slip` (note), `print` (image), `sticker` (emoji). Fixed sizes per type in `app/lib/design.ts`. Interactive elements inside nodes need the `nodrag` class. Positions PATCH on drag stop; ~10s polling revalidation (paused while dragging/editing), last-write-wins.
 - **The Sunday letter is lazy too**: `ensureWeeklyLetter` (called from the space loader) books a `letters` row per (space, week) and enqueues `letter.write`; the handler reads the week, has Claude write the words (`app/lib/letter-writer.server.ts`, quiet without `ANTHROPIC_API_KEY`), and puts a `letter` item on today's board signed by the system user `psst`. The hand lives in `app/lib/hand/` (browser-safe SVG; the email's PNG in `render-png.server.ts`).
+- **Native iOS board** (`docs/NATIVE_IOS.md`): the iOS app shows either the web board (`CanvasView`, WKWebView) or the native one (`Psst/Native/`) — `BoardExperience` in `Shared/Config.swift`, switched by the server (`IOS_NATIVE_BOARD`), a launch argument, or the Settings app. Keep both working until the web view is retired. The native board reads `/api/v1/*` (`app/routes/api.v1.*.ts`): thin routes over the same services, `requireApiUser` (JSON 401/403, never redirects) and `api()` from `app/lib/api.server.ts`. Board UI changes land on both platforms, or behind the switch with a note.
+- **Design tokens flow web → iOS**: `app.css` + `app/lib/design.ts` are the source; `pnpm tokens` writes `apps/ios/Psst/Shared/DesignTokens.generated.swift` (never edit it) and copies `design/grid/psst.json` into the iOS bundle. `pnpm lint` fails when they're stale.
+- **Grid**: `design/grid/psst.json` (GridKit format) is the one grid for web and iOS — `DESIGN.md` § Grid. The overlay runs in `pnpm dev` (⌥⇧G) and iOS debug builds (three-finger long press).
 - **Auth**: Better Auth, cookie sessions, handler mounted at `api/auth/*`. Use `requireUser(request)` / `getUser(request)` from `app/lib/auth.server.ts` in loaders/actions.
 
 ## Environment

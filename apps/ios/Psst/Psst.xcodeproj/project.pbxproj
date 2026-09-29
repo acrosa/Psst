@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		000000000000000000000310 /* PsstWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000220 /* PsstWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		000000000000000000000510 /* PsstShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000520 /* PsstShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		000000000000000000000920 /* GridKit in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000910 /* GridKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +104,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				000000000000000000000920 /* GridKit in Frameworks */,
 			);
 		};
 		000000000000000230000000 /* Frameworks */ = {
@@ -169,6 +171,9 @@
 				000000000000000000000050 /* Shared */,
 			);
 			name = Psst;
+			packageProductDependencies = (
+				000000000000000000000910 /* GridKit */,
+			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Psst.app */;
 			productType = "com.apple.product-type.application";
@@ -252,6 +257,9 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				000000000000000000000900 /* XCRemoteSwiftPackageReference "GridKit" */,
+			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -753,6 +761,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		000000000000000000000900 /* XCRemoteSwiftPackageReference "GridKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/acrosa/GridKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		000000000000000000000910 /* GridKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 000000000000000000000900 /* XCRemoteSwiftPackageReference "GridKit" */;
+			productName = GridKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }
