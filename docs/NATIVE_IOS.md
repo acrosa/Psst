@@ -2,7 +2,7 @@
 
 A plan for replacing the iOS app's web view with a fully native board, behind a switch that can put the web view back at any time. And for bringing GridKit into both the web and iOS apps, so the two stay on one grid.
 
-Status: **plan** · Owner: Alejandro · Last updated: 2026-09-29
+Status: **Phase 0 landed** (switch, `/api/v1`, tokens, fonts, GridKit) · Owner: Alejandro · Last updated: 2026-09-29
 
 ---
 
@@ -70,7 +70,7 @@ How `boardExperience` resolves, first match wins:
 | Remote kill switch: `flags.nativeBoard: "off"` in `GET /api/v1/me`, driven by the server env var `IOS_NATIVE_BOARD` | Lets us pull every install back to the web board without shipping a build. Cached, so it holds offline. |
 | Launch argument `-psst.board native\|web` | Simulator and UI tests. |
 | iOS Settings app toggle: **Native board** (`Settings.bundle`, App Group defaults) | Testers switch it themselves, with no settings UI inside psst. |
-| Build default | TestFlight: `native`. App Store: `web` until Phase 6. |
+| Build default (`BoardExperience.buildDefault`) | `web` everywhere while the native root is a placeholder. From Phase 1: TestFlight `native`, App Store `web` until Phase 6. |
 
 Rules:
 
@@ -130,9 +130,7 @@ The board's reads and writes are React Router loaders and actions. Loaders speak
 | `GET /api/v1/me` | session + `listSpacesForUser` | user, spaces, `flags`, waitlist state |
 | `POST /api/v1/spaces` | onboarding / `create-space` | first canvas |
 | `GET /api/v1/spaces/:id/board` | `space.tsx` loader | space, members, role, today's `BoardItem[]`, shareToken, pollMs. Adds `ETag`. |
-| `POST /api/v1/spaces/:id/items` | `createItem` | JSON `{kind, content, x?, y?}` for link, note, emoji and drawing |
-| `POST /api/v1/spaces/:id/items/image` | `createImageItem` | multipart |
-| `POST /api/v1/spaces/:id/items/audio` | `createAudioItem` | multipart, `audio/mp4` (m4a) |
+| `POST /api/v1/spaces/:id/items` | `createItem` · `createImageItem` · `createAudioItem` | JSON `{kind, content, x?, y?}` for link, note, emoji and drawing; multipart `kind=image\|audio` + `file` (+ audio's meta as `content`) for photos and voice notes (`audio/mp4` m4a) |
 | `PATCH /api/v1/items/:id` | `moveItem` / `resizeItem` | `{x, y}` or `{scale}` |
 | `DELETE /api/v1/items/:id` | `deleteItem` | |
 | `POST /api/v1/items/:id/comments` | `addComment` | 280-char cap enforced by the service |
@@ -241,8 +239,8 @@ Why a 4 pt base: the web's spacing already runs on Tailwind's 4 px steps (`DESIG
   - At the root: `.gridKit(.enabled(activation: .threeFingerLongPress))`. Shake would conflict with undo in text fields.
   - Bundle `psst.json` and load it on launch in DEBUG (`GridKit.shared.load(contentsOf:)`). Internal TestFlight builds can pass `force: true`.
 - **Web:**
-  - `gridkit-react` isn't on npm yet (the registry returns 404). **Recommended:** publish it from `GridKit/web` (its `prepublishOnly` already runs typecheck, tests and build), then add it as a `devDependency` of `apps/web`. Fallback: a pnpm git dependency on the `web/` subdirectory, which needs a `prepare: tsup` script in GridKit.
-  - Mount `<GridKitOverlay safeArea={{ top: headerHeight }} />` in `root.tsx` when `import.meta.env.DEV`. It renders nothing in production.
+  - `gridkit-react` isn't on npm yet. **Decided:** publish it from `GridKit/web` (its `prepublishOnly` already runs typecheck, tests and build). *Until then* `apps/web` installs it from the repository — `github:acrosa/GridKit#<sha>&path:/web`, built on install by GridKit's `prepare` script (allowed in `onlyBuiltDependencies`). Swap to the npm version once it's published.
+  - `app/components/dev-grid.tsx` mounts `<GridKitOverlay>` lazily, only when the server runs in development (never in tests or App Store screenshots). Production bundles don't contain it.
   - Serve the same `design/grid/psst.json` at `/grid.json` in dev only, and load it with `GridKit.shared.load('/grid.json')`.
 - **Both.** The overlay's JSON export writes back into `design/grid/psst.json`, so tuning on either platform updates the shared file.
 
@@ -332,12 +330,15 @@ Haptics are a detail to perfect or cut (DESIGN.md rule 9). The ones listed above
 Every phase ships behind the switch, with `native` on in TestFlight and `web` in the App Store, so the App Store app is never worse than today.
 
 **Phase 0 — Foundations**
-- The switch (§2): `BoardExperience`, `Settings.bundle`, launch argument, `NativeRoot` placeholder, remote flag
-- `/api/v1` (§4) with `requireApiUser`, ETag, `letterPath`, and `e2e/api-v1.spec.ts`
-- `pnpm tokens` → `DesignTokens.generated.swift`, with a lint check for staleness
-- Geist + Newsreader bundled in iOS
-- GridKit wired on both platforms, `design/grid/psst.json`, and the grid audit of the web (§6)
+- ✓ The switch (§2): `BoardExperience`, `Settings.bundle`, launch argument, `NativeRoot` placeholder, remote flag (`IOS_NATIVE_BOARD`)
+- ✓ `/api/v1` (§4) with `requireApiUser`, ETag, pre-drawn letters, and `e2e/api-v1.spec.ts` (bearer-only; writes `apps/ios/Psst/Fixtures/*.json` with `PSST_WRITE_FIXTURES=1`)
+- ✓ `APIClient` + `Models` in `Shared/`, shaped by those fixtures
+- ✓ `pnpm tokens` → `DesignTokens.generated.swift` (+ the grid JSON into the bundle), with `tokens:check` in `pnpm lint`. Board constants, motion and pencil colors moved into `design.ts`; `Theme.swift` reads the generated tokens.
+- ✓ Geist + Newsreader (variable, OFL) bundled in iOS, registered at launch; `PsstFont` has the three voices
+- ✓ GridKit on both platforms, `design/grid/psst.json`, the audit (`design/grid/AUDIT.md`), `DESIGN.md` § Grid, the dot grid at 32
+- ✓ CI builds the iOS and Mac apps on macOS (`.github/workflows/ios.yml`) — the first place the Swift compiles
 - *Exit:* flag flips between an empty native root and the web board. v1 specs pass. The audit is written up.
+- *Carried into Phase 1:* the `PsstTests` target (decoding the fixtures, paper-cut goldens) is created in Xcode with the first materials; the line-height tokens from the audit land with the native type.
 
 **Phase 1 — Read the board**
 - `BoardCanvas` pan and zoom, fitView, dot background

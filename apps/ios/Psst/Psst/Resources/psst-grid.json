@@ -1,0 +1,31 @@
+{
+	"columns": {
+		"count": 4,
+		"gutter": 16,
+		"leadingMargin": 24,
+		"trailingMargin": 24
+	},
+	"baseline": {
+		"rhythm": 4,
+		"emphasisEvery": 4
+	},
+	"keyLines": [
+		{ "name": "Header", "axis": "horizontal", "offset": 60, "anchor": "start", "unit": "points" },
+		{ "name": "Composer", "axis": "horizontal", "offset": 68, "anchor": "end", "unit": "points" },
+		{
+			"name": "Chrome inset",
+			"axis": "vertical",
+			"offset": 16,
+			"anchor": "start",
+			"unit": "points"
+		},
+		{ "name": "Chrome inset", "axis": "vertical", "offset": 16, "anchor": "end", "unit": "points" }
+	],
+	"appearance": {
+		"lineColor": { "red": 0.0, "green": 0.75, "blue": 0.95, "alpha": 1 },
+		"opacity": 0.6,
+		"blendMode": "difference"
+	},
+	"respectsSafeArea": true,
+	"layers": 53
+}

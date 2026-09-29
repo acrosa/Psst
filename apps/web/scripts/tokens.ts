@@ -5,7 +5,8 @@
  * motion from `app/app.css`; item sizes, board constants and emoji sets from
  * `app/lib/design.ts`. They become `DesignTokens.generated.swift`, so iOS
  * never hand-copies a number. `pnpm tokens --check` fails when the Swift file
- * is stale (it runs with `pnpm lint`).
+ * is stale (it runs with `pnpm lint`). The shared GridKit grid
+ * (`design/grid/psst.json`) is copied into the iOS bundle the same way.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,6 +26,17 @@ import { SHEET } from '../app/lib/hand';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CSS_PATH = path.join(here, '..', 'app', 'app.css');
+const GRID_PATH = path.join(here, '..', '..', '..', 'design', 'grid', 'psst.json');
+const GRID_OUT_PATH = path.join(
+	here,
+	'..',
+	'..',
+	'ios',
+	'Psst',
+	'Psst',
+	'Resources',
+	'psst-grid.json',
+);
 const OUT_PATH = path.join(
 	here,
 	'..',
@@ -262,18 +274,25 @@ struct Curve: Equatable, Sendable {
 `;
 }
 
-const output = generate(fs.readFileSync(CSS_PATH, 'utf8'));
+const outputs: Array<[string, string]> = [
+	[OUT_PATH, generate(fs.readFileSync(CSS_PATH, 'utf8'))],
+	// The shared grid rides along into the iOS bundle for GridKit.
+	[GRID_OUT_PATH, fs.readFileSync(GRID_PATH, 'utf8')],
+];
 
 if (process.argv.includes('--check')) {
-	const current = fs.existsSync(OUT_PATH) ? fs.readFileSync(OUT_PATH, 'utf8') : '';
-	if (current !== output) {
-		console.error(
-			'DesignTokens.generated.swift is stale — run `pnpm tokens` and commit the result.',
-		);
+	const stale = outputs.filter(
+		([file, content]) => !fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== content,
+	);
+	if (stale.length > 0) {
+		for (const [file] of stale) console.error(`stale: ${path.relative(process.cwd(), file)}`);
+		console.error('Run `pnpm tokens` and commit the result.');
 		process.exit(1);
 	}
 	console.log('design tokens: up to date');
 } else {
-	fs.writeFileSync(OUT_PATH, output);
-	console.log(`design tokens → ${path.relative(process.cwd(), OUT_PATH)}`);
+	for (const [file, content] of outputs) {
+		fs.writeFileSync(file, content);
+		console.log(`design tokens → ${path.relative(process.cwd(), file)}`);
+	}
 }

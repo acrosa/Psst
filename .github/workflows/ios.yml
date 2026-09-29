@@ -1,0 +1,51 @@
+# The iOS and macOS apps build on every change to them — the native board is
+# written where Xcode isn't, so CI is where its Swift first compiles.
+name: iOS
+
+on:
+  pull_request:
+    paths:
+      - 'apps/ios/**'
+      - 'design/grid/**'
+      - '.github/workflows/ios.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/ios/**'
+      - 'design/grid/**'
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/ios/Psst
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode
+        run: xcodebuild -version
+
+      - name: Build the iOS app (simulator, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Psst.xcodeproj \
+            -scheme Psst \
+            -destination 'generic/platform=iOS Simulator' \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build the Mac app (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Psst.xcodeproj \
+            -scheme PsstMac \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
