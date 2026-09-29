@@ -97,16 +97,20 @@ export async function requireUser(request: Request): Promise<SessionUser> {
 		throw redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
 	}
 	// The velvet rope: signed up but not yet let in → the waitlist page.
-	if (!isAdminEmail(user.email)) {
-		const [row] = await db
-			.select({ acceptedAt: schema.users.acceptedAt })
-			.from(schema.users)
-			.where(eq(schema.users.id, user.id));
-		if (!row?.acceptedAt) {
-			throw redirect('/waitlist');
-		}
+	if (!(await isLetIn(user))) {
+		throw redirect('/waitlist');
 	}
 	return user;
+}
+
+/** Past the velvet rope: an admin, or accepted off the waitlist. */
+export async function isLetIn(user: SessionUser): Promise<boolean> {
+	if (isAdminEmail(user.email)) return true;
+	const [row] = await db
+		.select({ acceptedAt: schema.users.acceptedAt })
+		.from(schema.users)
+		.where(eq(schema.users.id, user.id));
+	return Boolean(row?.acceptedAt);
 }
 
 /** Which social providers are configured — drives the sign-in buttons. */

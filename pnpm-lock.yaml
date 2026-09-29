@@ -102,6 +102,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.6
         version: 0.31.10
+      gridkit-react:
+        specifier: github:acrosa/GridKit#27978b38d54dc12706f3da3a1456314ac13fad84&path:/web
+        version: https://codeload.github.com/acrosa/GridKit/tar.gz/27978b38d54dc12706f3da3a1456314ac13fad84#path:/web(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       tailwindcss:
         specifier: ^4.1.13
         version: 4.3.3
@@ -1994,6 +1997,13 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  gridkit-react@https://codeload.github.com/acrosa/GridKit/tar.gz/27978b38d54dc12706f3da3a1456314ac13fad84#path:/web:
+    resolution: {path: /web, tarball: https://codeload.github.com/acrosa/GridKit/tar.gz/27978b38d54dc12706f3da3a1456314ac13fad84}
+    version: 0.1.0
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   has-symbols@1.1.0:
     resolution: {integrity: sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==}
@@ -4335,6 +4345,11 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
+
+  gridkit-react@https://codeload.github.com/acrosa/GridKit/tar.gz/27978b38d54dc12706f3da3a1456314ac13fad84#path:/web(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
 
   has-symbols@1.1.0: {}
 

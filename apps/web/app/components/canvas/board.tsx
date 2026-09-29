@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react';
 import { useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
+import { BOARD } from '~/lib/design';
 import type { Mentionable } from '~/lib/mentions';
 import type { BoardItem } from '~/lib/services/canvases.server';
 import { DropPasteLayer } from './drop-paste';
@@ -161,15 +162,15 @@ export function Board({
 					nodeTypes={nodeTypes}
 					nodesConnectable={false}
 					nodesDraggable={!frozen}
-					nodeDragThreshold={4}
+					nodeDragThreshold={BOARD.dragThreshold}
 					panOnDrag
 					zoomOnScroll
 					zoomOnDoubleClick={false}
 					proOptions={{ hideAttribution: true }}
-					minZoom={0.35}
-					maxZoom={1.75}
+					minZoom={BOARD.minZoom}
+					maxZoom={BOARD.maxZoom}
 					fitView
-					fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
+					fitViewOptions={{ padding: BOARD.fitPadding, maxZoom: BOARD.fitMaxZoom }}
 					deleteKeyCode={null}
 					onNodeDragStart={(_event, node) => {
 						draggingId.current = node.id;
@@ -184,8 +185,8 @@ export function Board({
 				>
 					<Background
 						variant={BackgroundVariant.Dots}
-						gap={30}
-						size={1.5}
+						gap={BOARD.dotGap}
+						size={BOARD.dotSize}
 						color="var(--color-line)"
 					/>
 				</ReactFlow>

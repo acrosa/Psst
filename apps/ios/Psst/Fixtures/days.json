@@ -1,0 +1,20 @@
+{
+	"space": {
+		"id": "4de2cbf9-9e3d-4642-b0c5-32c3fe642c39",
+		"name": "weekend plans",
+		"emoji": "🐸"
+	},
+	"days": [
+		{
+			"date": "2026-09-28",
+			"count": 1,
+			"peeks": [
+				{
+					"type": "note",
+					"text": "a yesterday thought"
+				}
+			]
+		}
+	],
+	"nextBefore": null
+}

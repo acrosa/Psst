@@ -13,7 +13,8 @@
 		"start": "pnpm -C apps/web start",
 		"worker": "pnpm -C apps/web worker",
 		"typecheck": "pnpm -C apps/web typecheck",
-		"lint": "biome check .",
+		"lint": "biome check . && pnpm -C apps/web tokens:check",
+		"tokens": "pnpm -C apps/web tokens",
 		"format": "biome format . --write",
 		"test:e2e": "pnpm -C apps/web test:e2e",
 		"db:setup": "pnpm -C apps/web db:setup",
@@ -23,6 +24,12 @@
 		"@biomejs/biome": "^1.9.4"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["@biomejs/biome", "better-sqlite3", "esbuild", "sharp"]
+		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"better-sqlite3",
+			"esbuild",
+			"gridkit-react",
+			"sharp"
+		]
 	}
 }
